@@ -37,7 +37,7 @@
     "messaging"
   ],
   "dependencies": {
-    "@babel/runtime": "^7.10.5",
+    "@babel/runtime": "^7.16.5",
     "agentkeepalive": "^3.5.2",
     "cbor-js": "^0.1.0",
     "cbor-sync": "^1.0.4",
