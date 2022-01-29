@@ -38,7 +38,7 @@
   ],
   "dependencies": {
     "@babel/runtime": "^7.10.5",
-    "agentkeepalive": "^3.5.2",
+    "agentkeepalive": "^4.2.0",
     "cbor-js": "^0.1.0",
     "cbor-sync": "^1.0.4",
     "isomorphic-webcrypto": "^2.3.6",
