@@ -1,16 +1,16 @@
-name: Automated project release
+name: Automated product release
 
 on:
   pull_request:
     branches: [ master ]
     types: [ closed ]
 
+
 jobs:
   check-release:
     name: Check release required
     runs-on: ubuntu-latest
-    # Uncomment this to run job only for merge (not PR close).
-#    if: ${{ github.event.pull_request.merged }}
+    if: ${{ github.event.pull_request.merged && endsWith(github.repository, '-private') != true }}
     outputs:
       release: ${{ steps.check.outputs.ready }}
     steps:
@@ -18,12 +18,12 @@ jobs:
         uses: actions/checkout@v2
         with:
           repository: pubnub/client-engineering-deployment-tools
-          ref: github-actions
+          ref: v1
           token: ${{ secrets.GH_TOKEN }}
-          path: ".github/.release/actions"
+          path: .github/.release/actions
       - id: check
         name: Check pre-release completed
-        uses: "./.github/.release/actions/actions/checks/release"
+        uses: ./.github/.release/actions/actions/checks/release
         with:
           token: ${{ secrets.GH_TOKEN }}
   publish:
@@ -41,9 +41,30 @@ jobs:
         uses: actions/checkout@v2
         with:
           repository: pubnub/client-engineering-deployment-tools
-          ref: github-actions
+          ref: v1
           token: ${{ secrets.GH_TOKEN }}
-          path: ".github/.release/actions"
-      - name: Run release actions
-        # Intentional fail, because credentials not specified.
-        uses: "./.github/.release/actions/actions/services/npm"
+          path: .github/.release/actions
+      - name: Publish to S3
+        uses: ./.github/.release/actions/actions/services/aws
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          content-type: application/javascript
+          content-encoding: gzip
+          acl: public-read
+          local-path: upload/gzip/*.js
+          remote-path: pubnub/sdk/javascript
+      - name: Publish to NPM
+        uses: ./.github/.release/actions/actions/services/npm
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+          npm-token: ${{ secrets.NPM_TOKEN }}
+          check-ownership: false
+      - name: Create Release
+        uses: ./.github/.release/actions/actions/services/github-release
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+          artifacts-folder: upload/normal/
+          jira-api-key: ${{ secrets.JIRA_API_KEY }}
+          last-service: true

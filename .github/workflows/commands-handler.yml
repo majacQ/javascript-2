@@ -7,7 +7,7 @@ on:
 jobs:
   process:
     name: Process command
-    if: ${{ github.event.issue.pull_request && startsWith(github.event.comment.body, '@client-engineering-bot ') }}
+    if: ${{ github.event.issue.pull_request && endsWith(github.repository, '-private') != true && startsWith(github.event.comment.body, '@client-engineering-bot ') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -16,13 +16,12 @@ jobs:
         uses: actions/checkout@v2
         with:
           repository: pubnub/client-engineering-deployment-tools
-          ref: github-actions
+          ref: v1
           token: ${{ secrets.GH_TOKEN }}
-          path: ".github/.release/actions"
-      - name: Run changelogs actions
-        uses: "./.github/.release/actions/actions/commands"
+          path: .github/.release/actions
+      - name: Process changelog entries
+        uses: ./.github/.release/actions/actions/commands
         with:
           token: ${{ secrets.GH_TOKEN }}
           listener: client-engineering-bot
-          publisher-name: Serhii Mamontov
-          publisher-email: parfeon@me.com
+          jira-api-key: ${{ secrets.JIRA_API_KEY }}

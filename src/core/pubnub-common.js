@@ -137,6 +137,10 @@ import * as leaveSpacesEndpointConfig from './endpoints/memberships/leave_spaces
 import * as auditEndpointConfig from './endpoints/access_manager/audit';
 import * as grantEndpointConfig from './endpoints/access_manager/grant';
 import * as grantTokenEndpointConfig from './endpoints/access_manager/grant_token';
+import revokeTokenEndpointConfig, {
+  type RevokeTokenParams,
+  type RevokeTokenResult,
+} from './endpoints/access_manager/revoke_token';
 
 import * as publishEndpointConfig from './endpoints/publish';
 import * as signalEndpointConfig from './endpoints/signal';
@@ -188,6 +192,10 @@ export default class {
   grant: Function;
   grantToken: Function;
   audit: Function;
+  revokeToken: (
+    parameters: RevokeTokenParams,
+    callback?: (status: CallbackStatus, result: RevokeTokenResult) => void
+  ) => Promise<RevokeTokenResult>;
   //
   subscribe: Function;
   signal: Function;
@@ -328,10 +336,7 @@ export default class {
 
   parseToken: Function;
   setToken: Function;
-  setTokens: Function;
   getToken: Function;
-  getTokens: Function;
-  clearTokens: Function;
 
   getAuthKey: Function;
   setAuthKey: Function;
@@ -353,9 +358,9 @@ export default class {
   //
 
   constructor(setup: InternalSetupStruct) {
-    let { db, networking, cbor } = setup;
+    let { networking, cbor } = setup;
 
-    const config = (this._config = new Config({ setup, db }));
+    const config = (this._config = new Config({ setup }));
     const crypto = new Crypto({ config }); // LEGACY
 
     const cryptography = setup.cryptography;
@@ -409,10 +414,7 @@ export default class {
 
     this.parseToken = tokenManager.parseToken.bind(tokenManager);
     this.setToken = tokenManager.setToken.bind(tokenManager);
-    this.setTokens = tokenManager.setTokens.bind(tokenManager);
     this.getToken = tokenManager.getToken.bind(tokenManager);
-    this.getTokens = tokenManager.getTokens.bind(tokenManager);
-    this.clearTokens = tokenManager.clearTokens.bind(tokenManager);
 
     /* channel groups */
     this.channelGroups = {
@@ -438,6 +440,7 @@ export default class {
     this.grant = endpointCreator.bind(this, modules, grantEndpointConfig);
     this.grantToken = endpointCreator.bind(this, modules, grantTokenEndpointConfig);
     this.audit = endpointCreator.bind(this, modules, auditEndpointConfig);
+    this.revokeToken = endpointCreator.bind(this, modules, revokeTokenEndpointConfig);
     //
     this.publish = endpointCreator.bind(this, modules, publishEndpointConfig);
 

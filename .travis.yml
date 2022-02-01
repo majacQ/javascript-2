@@ -17,7 +17,7 @@ stages:
   - name: "test"
     if: |
       type != pull_request
-  - name: "code coverage"
+  - name: "test pr branch"
     if: |
       type == pull_request
 
@@ -33,10 +33,7 @@ jobs:
     - name: 'NodeJS 12'
       node_js: '12'
       script: gulp test
-    - stage: "code coverage"
-      name: 'Test & Code coverage'
+    - stage: "test pr branch"
+      name: 'NodeJS 12'
       node_js: '12'
       script: gulp test
-      after_success:
-        - npm install codecov codacy-coverage
-        - cat ./coverage/lcov.info | node_modules/.bin/codacy-coverage

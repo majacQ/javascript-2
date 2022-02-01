@@ -1,3 +1,60 @@
+## v5.0.0
+January 12 2022
+
+#### Modified
+- BREAKING CHANGES: `uuid` is required parameter in PubNub constructor.
+
+## v4.37.0
+December 16 2021
+
+#### Added
+- Add revoke token feature.
+
+## v4.36.0
+December 09 2021
+
+#### Fixed
+- Remove isomorphic-webcrypto polyfill for web Add buffer polyfill to react native. Fixed the following issues reported by [@JakeOrel](https://github.com/JakeOrel): [#233](https://github.com/pubnub/javascript/issues/233).
+
+## v4.35.0
+December 02 2021
+
+#### Added
+- Allows to specify multiple origins in the config, which enables domain sharding for custom origins.
+
+## v4.34.2
+December 01 2021
+
+#### Fixed
+- Fix listener callback is invoked multiple times. Fixed the following issues reported by [@puopg](https://github.com/puopg): [#230](https://github.com/pubnub/javascript/issues/230).
+
+## v4.34.1
+November 19 2021
+
+#### Fixed
+- Update `.npmignore` and excluded resources from from NPM package. Fixed the following issues reported by [@ElridgeDMello](https://github.com/ElridgeDMello): [#228](https://github.com/pubnub/javascript/issues/228).
+
+## v4.34.0
+November 19 2021
+
+#### Added
+- Upgrade superagent.
+
+## [v4.33.1](https://github.com/pubnub/javascript/releases/tag/v4.33.1)
+October-18-2021
+
+[Full Changelog](https://github.com/pubnub/javascript/compare/v4.33.0...v4.33.1)
+
+- 🐛 Fixes issue of performing file publish message retry according to `fileUploadPublishRetryLimit` setting of PubNub instance. 
+
+## [v4.33.0](https://github.com/pubnub/javascript/releases/tag/v4.33.0)
+August-31-2021
+
+[Full Changelog](https://github.com/pubnub/javascript/compare/v4.32.1...v4.33.0)
+
+- 🌟️ Added support for Objects v2 in PAM v3 api. 
+- 🐛 Fixes issue related to file decryption when cipherkey is provided in method. 
+
 ## [v4.32.1](https://github.com/pubnub/javascript/releases/tag/v4.32.1)
 May-26-2021
 

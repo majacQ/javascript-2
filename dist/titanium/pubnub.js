@@ -1,4 +1,4 @@
-/*! 4.32.1 / Consumer  */
+/*! 5.0.0 / Consumer  */
 exports["PubNub"] =
 /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
@@ -97,6 +97,7 @@ function _interopRequireDefault(obj) {
 }
 
 module.exports = _interopRequireDefault;
+module.exports["default"] = module.exports, module.exports.__esModule = true;
 
 /***/ }),
 /* 1 */
@@ -165,7 +166,8 @@ var _default = {
   PNRemoveChannelsFromGroupOperation: 'PNRemoveChannelsFromGroupOperation',
   PNAccessManagerGrant: 'PNAccessManagerGrant',
   PNAccessManagerGrantToken: 'PNAccessManagerGrantToken',
-  PNAccessManagerAudit: 'PNAccessManagerAudit'
+  PNAccessManagerAudit: 'PNAccessManagerAudit',
+  PNAccessManagerRevokeToken: 'PNAccessManagerRevokeToken'
 };
 exports["default"] = _default;
 module.exports = exports.default;
@@ -273,6 +275,7 @@ function _defineProperty(obj, key, value) {
 }
 
 module.exports = _defineProperty;
+module.exports["default"] = module.exports, module.exports.__esModule = true;
 
 /***/ }),
 /* 5 */
@@ -285,6 +288,7 @@ function _classCallCheck(instance, Constructor) {
 }
 
 module.exports = _classCallCheck;
+module.exports["default"] = module.exports, module.exports.__esModule = true;
 
 /***/ }),
 /* 6 */
@@ -307,6 +311,7 @@ function _createClass(Constructor, protoProps, staticProps) {
 }
 
 module.exports = _createClass;
+module.exports["default"] = module.exports, module.exports.__esModule = true;
 
 /***/ }),
 /* 7 */
@@ -319,16 +324,21 @@ function _typeof(obj) {
     module.exports = _typeof = function _typeof(obj) {
       return typeof obj;
     };
+
+    module.exports["default"] = module.exports, module.exports.__esModule = true;
   } else {
     module.exports = _typeof = function _typeof(obj) {
       return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
     };
+
+    module.exports["default"] = module.exports, module.exports.__esModule = true;
   }
 
   return _typeof(obj);
 }
 
 module.exports = _typeof;
+module.exports["default"] = module.exports, module.exports.__esModule = true;
 
 /***/ }),
 /* 8 */
@@ -357,14 +367,20 @@ var _flow_interfaces = __webpack_require__(2);
 var PRESENCE_TIMEOUT_MINIMUM = 20;
 var PRESENCE_TIMEOUT_DEFAULT = 300;
 
+var makeDefaultOrigins = function makeDefaultOrigins() {
+  return Array.from({
+    length: 20
+  }, function (_, i) {
+    return "ps".concat(i + 1, ".pndsn.com");
+  });
+};
+
 var _default = function () {
   function _default(_ref) {
     var _setup$fileUploadPubl, _setup$useRandomIVs;
 
-    var setup = _ref.setup,
-        db = _ref.db;
+    var setup = _ref.setup;
     (0, _classCallCheck2["default"])(this, _default);
-    (0, _defineProperty2["default"])(this, "_db", void 0);
     (0, _defineProperty2["default"])(this, "subscribeKey", void 0);
     (0, _defineProperty2["default"])(this, "publishKey", void 0);
     (0, _defineProperty2["default"])(this, "secretKey", void 0);
@@ -403,7 +419,6 @@ var _default = function () {
     (0, _defineProperty2["default"])(this, "fileUploadPublishRetryLimit", void 0);
     (0, _defineProperty2["default"])(this, "useRandomIVs", void 0);
     this._PNSDKSuffix = {};
-    this._db = db;
     this.instanceId = "pn-".concat(_uuid["default"].createUUID());
     this.secretKey = setup.secretKey || setup.secret_key;
     this.subscribeKey = setup.subscribeKey || setup.subscribe_key;
@@ -414,7 +429,12 @@ var _default = function () {
     this.setAuthKey(setup.authKey);
     this.setCipherKey(setup.cipherKey);
     this.setFilterExpression(setup.filterExpression);
-    this.origin = setup.origin || 'ps.pndsn.com';
+
+    if (typeof setup.origin !== 'string' && !Array.isArray(setup.origin) && setup.origin !== undefined) {
+      throw new Error('Origin must be either undefined, a string or a list of strings.');
+    }
+
+    this.origin = setup.origin || makeDefaultOrigins();
     this.secure = setup.ssl || false;
     this.restore = setup.restore || false;
     this.proxy = setup.proxy;
@@ -453,7 +473,7 @@ var _default = function () {
       this.setHeartbeatInterval(setup.heartbeatInterval);
     }
 
-    this.setUUID(this._decideUUID(setup.uuid));
+    this.setUUID(setup.uuid);
   }
 
   (0, _createClass2["default"])(_default, [{
@@ -481,7 +501,10 @@ var _default = function () {
   }, {
     key: "setUUID",
     value: function setUUID(val) {
-      if (this._db && this._db.set) this._db.set("".concat(this.subscribeKey, "uuid"), val);
+      if (!val || typeof val !== 'string' || val.trim().length === 0) {
+        throw new Error('Missing uuid parameter. Provide a valid string uuid');
+      }
+
       this.UUID = val;
       return this;
     }
@@ -566,7 +589,7 @@ var _default = function () {
   }, {
     key: "getVersion",
     value: function getVersion() {
-      return '4.32.1';
+      return '5.0.0';
     }
   }, {
     key: "_addPnsdkSuffix",
@@ -582,19 +605,6 @@ var _default = function () {
         return result + separator + _this._PNSDKSuffix[key];
       }, '');
     }
-  }, {
-    key: "_decideUUID",
-    value: function _decideUUID(providedUUID) {
-      if (providedUUID) {
-        return providedUUID;
-      }
-
-      if (this._db && this._db.get && this._db.get("".concat(this.subscribeKey, "uuid"))) {
-        return this._db.get("".concat(this.subscribeKey, "uuid"));
-      }
-
-      return "pn-".concat(_uuid["default"].createUUID());
-    }
   }]);
   return _default;
 }();
@@ -606,19 +616,20 @@ module.exports = exports.default;
 /* 9 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var arrayWithHoles = __webpack_require__(70);
+var arrayWithHoles = __webpack_require__(69);
 
-var iterableToArrayLimit = __webpack_require__(71);
+var iterableToArrayLimit = __webpack_require__(70);
 
-var unsupportedIterableToArray = __webpack_require__(72);
+var unsupportedIterableToArray = __webpack_require__(71);
 
-var nonIterableRest = __webpack_require__(74);
+var nonIterableRest = __webpack_require__(73);
 
 function _slicedToArray(arr, i) {
   return arrayWithHoles(arr) || iterableToArrayLimit(arr, i) || unsupportedIterableToArray(arr, i) || nonIterableRest();
 }
 
 module.exports = _slicedToArray;
+module.exports["default"] = module.exports, module.exports.__esModule = true;
 
 /***/ }),
 /* 10 */
@@ -654,10 +665,12 @@ function _getPrototypeOf(o) {
   module.exports = _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) {
     return o.__proto__ || Object.getPrototypeOf(o);
   };
+  module.exports["default"] = module.exports, module.exports.__esModule = true;
   return _getPrototypeOf(o);
 }
 
 module.exports = _getPrototypeOf;
+module.exports["default"] = module.exports, module.exports.__esModule = true;
 
 /***/ }),
 /* 12 */
@@ -681,6 +694,7 @@ function _inherits(subClass, superClass) {
 }
 
 module.exports = _inherits;
+module.exports["default"] = module.exports, module.exports.__esModule = true;
 
 /***/ }),
 /* 13 */
@@ -692,28 +706,33 @@ function _setPrototypeOf(o, p) {
     return o;
   };
 
+  module.exports["default"] = module.exports, module.exports.__esModule = true;
   return _setPrototypeOf(o, p);
 }
 
 module.exports = _setPrototypeOf;
+module.exports["default"] = module.exports, module.exports.__esModule = true;
 
 /***/ }),
 /* 14 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var _typeof = __webpack_require__(7);
+var _typeof = __webpack_require__(7)["default"];
 
 var assertThisInitialized = __webpack_require__(17);
 
 function _possibleConstructorReturn(self, call) {
   if (call && (_typeof(call) === "object" || typeof call === "function")) {
     return call;
+  } else if (call !== void 0) {
+    throw new TypeError("Derived constructors may only return object or undefined");
   }
 
   return assertThisInitialized(self);
 }
 
 module.exports = _possibleConstructorReturn;
+module.exports["default"] = module.exports, module.exports.__esModule = true;
 
 /***/ }),
 /* 15 */
@@ -729,7 +748,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports["default"] = void 0;
 
-var _lilUuid = _interopRequireDefault(__webpack_require__(27));
+var _lilUuid = _interopRequireDefault(__webpack_require__(26));
 
 var _default = {
   createUUID: function createUUID() {
@@ -755,11 +774,11 @@ var _interopRequireDefault = __webpack_require__(0);
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.PubNubError = void 0;
 exports.createValidationError = createValidationError;
+exports["default"] = _default;
 exports.generatePNSDK = generatePNSDK;
 exports.signRequest = signRequest;
-exports["default"] = _default;
-exports.PubNubError = void 0;
 
 var _defineProperty2 = _interopRequireDefault(__webpack_require__(4));
 
@@ -771,7 +790,7 @@ var _possibleConstructorReturn2 = _interopRequireDefault(__webpack_require__(14)
 
 var _getPrototypeOf2 = _interopRequireDefault(__webpack_require__(11));
 
-var _wrapNativeSuper2 = _interopRequireDefault(__webpack_require__(37));
+var _wrapNativeSuper2 = _interopRequireDefault(__webpack_require__(36));
 
 var _uuid = _interopRequireDefault(__webpack_require__(15));
 
@@ -785,13 +804,13 @@ var _operations = _interopRequireDefault(__webpack_require__(1));
 
 var _categories = _interopRequireDefault(__webpack_require__(10));
 
-function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) { symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); } keys.push.apply(keys, symbols); } return keys; }
 
 function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(Object(source), true).forEach(function (key) { (0, _defineProperty2["default"])(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
 
 function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = (0, _getPrototypeOf2["default"])(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = (0, _getPrototypeOf2["default"])(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return (0, _possibleConstructorReturn2["default"])(this, result); }; }
 
-function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Date.prototype.toString.call(Reflect.construct(Date, [], function () {})); return true; } catch (e) { return false; } }
+function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
 
 var PubNubError = function (_Error) {
   (0, _inherits2["default"])(PubNubError, _Error);
@@ -836,16 +855,6 @@ function decideURL(endpoint, modules, incomingParams) {
   } else {
     return endpoint.getURL(modules, incomingParams);
   }
-}
-
-function getAuthToken(endpoint, modules, incomingParams) {
-  var token;
-
-  if (endpoint.getAuthToken) {
-    token = endpoint.getAuthToken(modules, incomingParams);
-  }
-
-  return token;
 }
 
 function generatePNSDK(config) {
@@ -928,7 +937,8 @@ function signRequest(modules, url, outgoingParams, incomingParams, endpoint) {
 function _default(modules, endpoint) {
   var networking = modules.networking,
       config = modules.config,
-      telemetryManager = modules.telemetryManager;
+      telemetryManager = modules.telemetryManager,
+      tokenManager = modules.tokenManager;
 
   var requestId = _uuid["default"].createUUID();
 
@@ -988,8 +998,7 @@ function _default(modules, endpoint) {
   }
 
   if (endpoint.isAuthSupported()) {
-    var token = getAuthToken(endpoint, modules, incomingParams);
-    var tokenOrKey = token || config.getAuthKey();
+    var tokenOrKey = tokenManager.getToken() || config.getAuthKey();
 
     if (tokenOrKey) {
       outgoingParams.auth = tokenOrKey;
@@ -1090,6 +1099,7 @@ function _assertThisInitialized(self) {
 }
 
 module.exports = _assertThisInitialized;
+module.exports["default"] = module.exports, module.exports.__esModule = true;
 
 /***/ }),
 /* 18 */
@@ -1113,7 +1123,7 @@ var _defineProperty2 = _interopRequireDefault(__webpack_require__(4));
 
 var _config = _interopRequireDefault(__webpack_require__(8));
 
-var _hmacSha = _interopRequireDefault(__webpack_require__(28));
+var _hmacSha = _interopRequireDefault(__webpack_require__(27));
 
 function bufferToWordArray(b) {
   var wa = [];
@@ -1486,11 +1496,11 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.getOperation = getOperation;
-exports.getURL = getURL;
 exports.getRequestTimeout = getRequestTimeout;
-exports.prepareParams = prepareParams;
-exports.isAuthSupported = isAuthSupported;
+exports.getURL = getURL;
 exports.handleResponse = handleResponse;
+exports.isAuthSupported = isAuthSupported;
+exports.prepareParams = prepareParams;
 exports.validateParams = validateParams;
 
 var _flow_interfaces = __webpack_require__(2);
@@ -1530,7 +1540,7 @@ function validateParams() {}
 /* 21 */
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(65);
+module.exports = __webpack_require__(64);
 
 
 /***/ }),
@@ -1574,6 +1584,7 @@ function _asyncToGenerator(fn) {
 }
 
 module.exports = _asyncToGenerator;
+module.exports["default"] = module.exports, module.exports.__esModule = true;
 
 /***/ }),
 /* 23 */
@@ -1613,7 +1624,7 @@ var _flow_interfaces = __webpack_require__(2);
 
 function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = (0, _getPrototypeOf2["default"])(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = (0, _getPrototypeOf2["default"])(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return (0, _possibleConstructorReturn2["default"])(this, result); }; }
 
-function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Date.prototype.toString.call(Reflect.construct(Date, [], function () {})); return true; } catch (e) { return false; } }
+function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
 
 var PubNub = function (_PubNubCore) {
   (0, _inherits2["default"])(PubNub, _PubNubCore);
@@ -2283,9 +2294,9 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
 "use strict";
 
 
-var _interopRequireWildcard = __webpack_require__(26);
-
 var _interopRequireDefault = __webpack_require__(0);
+
+var _typeof = __webpack_require__(7);
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -2302,139 +2313,141 @@ var _config = _interopRequireDefault(__webpack_require__(8));
 
 var _index = _interopRequireDefault(__webpack_require__(18));
 
-var _subscription_manager = _interopRequireDefault(__webpack_require__(29));
+var _subscription_manager = _interopRequireDefault(__webpack_require__(28));
 
-var _telemetry_manager = _interopRequireDefault(__webpack_require__(32));
+var _telemetry_manager = _interopRequireDefault(__webpack_require__(31));
 
-var _push_payload = _interopRequireDefault(__webpack_require__(33));
+var _push_payload = _interopRequireDefault(__webpack_require__(32));
 
 var _listener_manager = _interopRequireDefault(__webpack_require__(19));
 
-var _token_manager = _interopRequireDefault(__webpack_require__(36));
+var _token_manager = _interopRequireDefault(__webpack_require__(35));
 
 var _endpoint = _interopRequireDefault(__webpack_require__(16));
 
 var _utils = __webpack_require__(3);
 
-var addChannelsChannelGroupConfig = _interopRequireWildcard(__webpack_require__(41));
+var addChannelsChannelGroupConfig = _interopRequireWildcard(__webpack_require__(40));
 
-var removeChannelsChannelGroupConfig = _interopRequireWildcard(__webpack_require__(42));
+var removeChannelsChannelGroupConfig = _interopRequireWildcard(__webpack_require__(41));
 
-var deleteChannelGroupConfig = _interopRequireWildcard(__webpack_require__(43));
+var deleteChannelGroupConfig = _interopRequireWildcard(__webpack_require__(42));
 
-var listChannelGroupsConfig = _interopRequireWildcard(__webpack_require__(44));
+var listChannelGroupsConfig = _interopRequireWildcard(__webpack_require__(43));
 
-var listChannelsInChannelGroupConfig = _interopRequireWildcard(__webpack_require__(45));
+var listChannelsInChannelGroupConfig = _interopRequireWildcard(__webpack_require__(44));
 
-var addPushChannelsConfig = _interopRequireWildcard(__webpack_require__(46));
+var addPushChannelsConfig = _interopRequireWildcard(__webpack_require__(45));
 
-var removePushChannelsConfig = _interopRequireWildcard(__webpack_require__(47));
+var removePushChannelsConfig = _interopRequireWildcard(__webpack_require__(46));
 
-var listPushChannelsConfig = _interopRequireWildcard(__webpack_require__(48));
+var listPushChannelsConfig = _interopRequireWildcard(__webpack_require__(47));
 
-var removeDevicePushConfig = _interopRequireWildcard(__webpack_require__(49));
+var removeDevicePushConfig = _interopRequireWildcard(__webpack_require__(48));
 
-var presenceLeaveEndpointConfig = _interopRequireWildcard(__webpack_require__(50));
+var presenceLeaveEndpointConfig = _interopRequireWildcard(__webpack_require__(49));
 
-var presenceWhereNowEndpointConfig = _interopRequireWildcard(__webpack_require__(51));
+var presenceWhereNowEndpointConfig = _interopRequireWildcard(__webpack_require__(50));
 
-var presenceHeartbeatEndpointConfig = _interopRequireWildcard(__webpack_require__(52));
+var presenceHeartbeatEndpointConfig = _interopRequireWildcard(__webpack_require__(51));
 
-var presenceGetStateConfig = _interopRequireWildcard(__webpack_require__(53));
+var presenceGetStateConfig = _interopRequireWildcard(__webpack_require__(52));
 
-var presenceSetStateConfig = _interopRequireWildcard(__webpack_require__(54));
+var presenceSetStateConfig = _interopRequireWildcard(__webpack_require__(53));
 
-var presenceHereNowConfig = _interopRequireWildcard(__webpack_require__(55));
+var presenceHereNowConfig = _interopRequireWildcard(__webpack_require__(54));
 
-var addMessageActionEndpointConfig = _interopRequireWildcard(__webpack_require__(56));
+var addMessageActionEndpointConfig = _interopRequireWildcard(__webpack_require__(55));
 
-var removeMessageActionEndpointConfig = _interopRequireWildcard(__webpack_require__(57));
+var removeMessageActionEndpointConfig = _interopRequireWildcard(__webpack_require__(56));
 
-var getMessageActionEndpointConfig = _interopRequireWildcard(__webpack_require__(58));
+var getMessageActionEndpointConfig = _interopRequireWildcard(__webpack_require__(57));
 
-var _file = __webpack_require__(59);
+var _file = __webpack_require__(58);
 
-var fileUploadTypes = _interopRequireWildcard(__webpack_require__(60));
+var fileUploadTypes = _interopRequireWildcard(__webpack_require__(59));
 
-var _list_files = _interopRequireDefault(__webpack_require__(61));
+var _list_files = _interopRequireDefault(__webpack_require__(60));
 
-var _generate_upload_url = _interopRequireDefault(__webpack_require__(62));
+var _generate_upload_url = _interopRequireDefault(__webpack_require__(61));
 
-var _publish_file = _interopRequireDefault(__webpack_require__(63));
+var _publish_file = _interopRequireDefault(__webpack_require__(62));
 
-var _send_file = _interopRequireDefault(__webpack_require__(64));
+var _send_file = _interopRequireDefault(__webpack_require__(63));
 
-var _get_file_url = _interopRequireDefault(__webpack_require__(66));
+var _get_file_url = _interopRequireDefault(__webpack_require__(65));
 
-var _download_file = _interopRequireDefault(__webpack_require__(67));
+var _download_file = _interopRequireDefault(__webpack_require__(66));
 
-var _delete_file = _interopRequireDefault(__webpack_require__(68));
+var _delete_file = _interopRequireDefault(__webpack_require__(67));
 
-var _get_all = _interopRequireDefault(__webpack_require__(69));
+var _get_all = _interopRequireDefault(__webpack_require__(68));
 
-var _get = _interopRequireDefault(__webpack_require__(75));
+var _get = _interopRequireDefault(__webpack_require__(74));
 
-var _set = _interopRequireDefault(__webpack_require__(76));
+var _set = _interopRequireDefault(__webpack_require__(75));
 
-var _remove = _interopRequireDefault(__webpack_require__(77));
+var _remove = _interopRequireDefault(__webpack_require__(76));
 
-var _get_all2 = _interopRequireDefault(__webpack_require__(78));
+var _get_all2 = _interopRequireDefault(__webpack_require__(77));
 
-var _get2 = _interopRequireDefault(__webpack_require__(79));
+var _get2 = _interopRequireDefault(__webpack_require__(78));
 
-var _set2 = _interopRequireDefault(__webpack_require__(80));
+var _set2 = _interopRequireDefault(__webpack_require__(79));
 
-var _remove2 = _interopRequireDefault(__webpack_require__(81));
+var _remove2 = _interopRequireDefault(__webpack_require__(80));
 
-var _get3 = _interopRequireDefault(__webpack_require__(82));
+var _get3 = _interopRequireDefault(__webpack_require__(81));
 
-var _set3 = _interopRequireDefault(__webpack_require__(83));
+var _set3 = _interopRequireDefault(__webpack_require__(82));
 
-var _get4 = _interopRequireDefault(__webpack_require__(84));
+var _get4 = _interopRequireDefault(__webpack_require__(83));
 
-var _set4 = _interopRequireDefault(__webpack_require__(85));
+var _set4 = _interopRequireDefault(__webpack_require__(84));
 
-var createUserEndpointConfig = _interopRequireWildcard(__webpack_require__(86));
+var createUserEndpointConfig = _interopRequireWildcard(__webpack_require__(85));
 
-var updateUserEndpointConfig = _interopRequireWildcard(__webpack_require__(87));
+var updateUserEndpointConfig = _interopRequireWildcard(__webpack_require__(86));
 
-var deleteUserEndpointConfig = _interopRequireWildcard(__webpack_require__(88));
+var deleteUserEndpointConfig = _interopRequireWildcard(__webpack_require__(87));
 
-var getUserEndpointConfig = _interopRequireWildcard(__webpack_require__(89));
+var getUserEndpointConfig = _interopRequireWildcard(__webpack_require__(88));
 
-var getUsersEndpointConfig = _interopRequireWildcard(__webpack_require__(90));
+var getUsersEndpointConfig = _interopRequireWildcard(__webpack_require__(89));
 
-var createSpaceEndpointConfig = _interopRequireWildcard(__webpack_require__(91));
+var createSpaceEndpointConfig = _interopRequireWildcard(__webpack_require__(90));
 
-var updateSpaceEndpointConfig = _interopRequireWildcard(__webpack_require__(92));
+var updateSpaceEndpointConfig = _interopRequireWildcard(__webpack_require__(91));
 
-var deleteSpaceEndpointConfig = _interopRequireWildcard(__webpack_require__(93));
+var deleteSpaceEndpointConfig = _interopRequireWildcard(__webpack_require__(92));
 
-var getSpacesEndpointConfig = _interopRequireWildcard(__webpack_require__(94));
+var getSpacesEndpointConfig = _interopRequireWildcard(__webpack_require__(93));
 
-var getSpaceEndpointConfig = _interopRequireWildcard(__webpack_require__(95));
+var getSpaceEndpointConfig = _interopRequireWildcard(__webpack_require__(94));
 
-var getMembersEndpointConfig = _interopRequireWildcard(__webpack_require__(96));
+var getMembersEndpointConfig = _interopRequireWildcard(__webpack_require__(95));
 
-var addMembersEndpointConfig = _interopRequireWildcard(__webpack_require__(97));
+var addMembersEndpointConfig = _interopRequireWildcard(__webpack_require__(96));
 
-var updateMembersEndpointConfig = _interopRequireWildcard(__webpack_require__(98));
+var updateMembersEndpointConfig = _interopRequireWildcard(__webpack_require__(97));
 
-var removeMembersEndpointConfig = _interopRequireWildcard(__webpack_require__(99));
+var removeMembersEndpointConfig = _interopRequireWildcard(__webpack_require__(98));
 
-var getMembershipsEndpointConfig = _interopRequireWildcard(__webpack_require__(100));
+var getMembershipsEndpointConfig = _interopRequireWildcard(__webpack_require__(99));
 
-var updateMembershipsEndpointConfig = _interopRequireWildcard(__webpack_require__(101));
+var updateMembershipsEndpointConfig = _interopRequireWildcard(__webpack_require__(100));
 
-var joinSpacesEndpointConfig = _interopRequireWildcard(__webpack_require__(102));
+var joinSpacesEndpointConfig = _interopRequireWildcard(__webpack_require__(101));
 
-var leaveSpacesEndpointConfig = _interopRequireWildcard(__webpack_require__(103));
+var leaveSpacesEndpointConfig = _interopRequireWildcard(__webpack_require__(102));
 
-var auditEndpointConfig = _interopRequireWildcard(__webpack_require__(104));
+var auditEndpointConfig = _interopRequireWildcard(__webpack_require__(103));
 
-var grantEndpointConfig = _interopRequireWildcard(__webpack_require__(105));
+var grantEndpointConfig = _interopRequireWildcard(__webpack_require__(104));
 
-var grantTokenEndpointConfig = _interopRequireWildcard(__webpack_require__(106));
+var grantTokenEndpointConfig = _interopRequireWildcard(__webpack_require__(105));
+
+var _revoke_token = _interopRequireDefault(__webpack_require__(106));
 
 var publishEndpointConfig = _interopRequireWildcard(__webpack_require__(107));
 
@@ -2460,7 +2473,11 @@ var _flow_interfaces = __webpack_require__(2);
 
 var _uuid = _interopRequireDefault(__webpack_require__(15));
 
-function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function _getRequireWildcardCache(nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
+
+function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && obj.__esModule) { return obj; } if (obj === null || _typeof(obj) !== "object" && typeof obj !== "function") { return { "default": obj }; } var cache = _getRequireWildcardCache(nodeInterop); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (key !== "default" && Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj["default"] = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
+
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) { symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); } keys.push.apply(keys, symbols); } return keys; }
 
 function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(Object(source), true).forEach(function (key) { (0, _defineProperty2["default"])(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
 
@@ -2489,6 +2506,7 @@ var _default = function () {
     (0, _defineProperty2["default"])(this, "grant", void 0);
     (0, _defineProperty2["default"])(this, "grantToken", void 0);
     (0, _defineProperty2["default"])(this, "audit", void 0);
+    (0, _defineProperty2["default"])(this, "revokeToken", void 0);
     (0, _defineProperty2["default"])(this, "subscribe", void 0);
     (0, _defineProperty2["default"])(this, "signal", void 0);
     (0, _defineProperty2["default"])(this, "presence", void 0);
@@ -2536,10 +2554,7 @@ var _default = function () {
     (0, _defineProperty2["default"])(this, "removeAllListeners", void 0);
     (0, _defineProperty2["default"])(this, "parseToken", void 0);
     (0, _defineProperty2["default"])(this, "setToken", void 0);
-    (0, _defineProperty2["default"])(this, "setTokens", void 0);
     (0, _defineProperty2["default"])(this, "getToken", void 0);
-    (0, _defineProperty2["default"])(this, "getTokens", void 0);
-    (0, _defineProperty2["default"])(this, "clearTokens", void 0);
     (0, _defineProperty2["default"])(this, "getAuthKey", void 0);
     (0, _defineProperty2["default"])(this, "setAuthKey", void 0);
     (0, _defineProperty2["default"])(this, "setCipherKey", void 0);
@@ -2551,12 +2566,10 @@ var _default = function () {
     (0, _defineProperty2["default"])(this, "setProxy", void 0);
     (0, _defineProperty2["default"])(this, "encrypt", void 0);
     (0, _defineProperty2["default"])(this, "decrypt", void 0);
-    var db = setup.db,
-        networking = setup.networking,
+    var networking = setup.networking,
         cbor = setup.cbor;
     var config = this._config = new _config["default"]({
-      setup: setup,
-      db: db
+      setup: setup
     });
     var crypto = new _index["default"]({
       config: config
@@ -2615,10 +2628,7 @@ var _default = function () {
     this.removeAllListeners = listenerManager.removeAllListeners.bind(listenerManager);
     this.parseToken = tokenManager.parseToken.bind(tokenManager);
     this.setToken = tokenManager.setToken.bind(tokenManager);
-    this.setTokens = tokenManager.setTokens.bind(tokenManager);
     this.getToken = tokenManager.getToken.bind(tokenManager);
-    this.getTokens = tokenManager.getTokens.bind(tokenManager);
-    this.clearTokens = tokenManager.clearTokens.bind(tokenManager);
     this.channelGroups = {
       listGroups: _endpoint["default"].bind(this, modules, listChannelGroupsConfig),
       listChannels: _endpoint["default"].bind(this, modules, listChannelsInChannelGroupConfig),
@@ -2639,6 +2649,7 @@ var _default = function () {
     this.grant = _endpoint["default"].bind(this, modules, grantEndpointConfig);
     this.grantToken = _endpoint["default"].bind(this, modules, grantTokenEndpointConfig);
     this.audit = _endpoint["default"].bind(this, modules, auditEndpointConfig);
+    this.revokeToken = _endpoint["default"].bind(this, modules, _revoke_token["default"]);
     this.publish = _endpoint["default"].bind(this, modules, publishEndpointConfig);
 
     this.fire = function (args, callback) {
@@ -2825,66 +2836,6 @@ module.exports = exports.default;
 /* 26 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var _typeof = __webpack_require__(7);
-
-function _getRequireWildcardCache() {
-  if (typeof WeakMap !== "function") return null;
-  var cache = new WeakMap();
-
-  _getRequireWildcardCache = function _getRequireWildcardCache() {
-    return cache;
-  };
-
-  return cache;
-}
-
-function _interopRequireWildcard(obj) {
-  if (obj && obj.__esModule) {
-    return obj;
-  }
-
-  if (obj === null || _typeof(obj) !== "object" && typeof obj !== "function") {
-    return {
-      "default": obj
-    };
-  }
-
-  var cache = _getRequireWildcardCache();
-
-  if (cache && cache.has(obj)) {
-    return cache.get(obj);
-  }
-
-  var newObj = {};
-  var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor;
-
-  for (var key in obj) {
-    if (Object.prototype.hasOwnProperty.call(obj, key)) {
-      var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null;
-
-      if (desc && (desc.get || desc.set)) {
-        Object.defineProperty(newObj, key, desc);
-      } else {
-        newObj[key] = obj[key];
-      }
-    }
-  }
-
-  newObj["default"] = obj;
-
-  if (cache) {
-    cache.set(obj, newObj);
-  }
-
-  return newObj;
-}
-
-module.exports = _interopRequireWildcard;
-
-/***/ }),
-/* 27 */
-/***/ (function(module, exports, __webpack_require__) {
-
 var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/*! lil-uuid - v0.1 - MIT License - https://github.com/lil-js/uuid */
 (function (root, factory) {
   if (true) {
@@ -2926,7 +2877,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
 
 
 /***/ }),
-/* 28 */
+/* 27 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3833,7 +3784,7 @@ CryptoJS.mode.ECB = function () {
 module.exports = CryptoJS;
 
 /***/ }),
-/* 29 */
+/* 28 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3860,9 +3811,9 @@ var _config = _interopRequireDefault(__webpack_require__(8));
 
 var _listener_manager = _interopRequireDefault(__webpack_require__(19));
 
-var _reconnection_manager = _interopRequireDefault(__webpack_require__(30));
+var _reconnection_manager = _interopRequireDefault(__webpack_require__(29));
 
-var _deduping_manager = _interopRequireDefault(__webpack_require__(31));
+var _deduping_manager = _interopRequireDefault(__webpack_require__(30));
 
 var _utils = _interopRequireDefault(__webpack_require__(3));
 
@@ -4581,7 +4532,7 @@ exports["default"] = _default;
 module.exports = exports.default;
 
 /***/ }),
-/* 30 */
+/* 29 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -4650,7 +4601,7 @@ exports["default"] = _default;
 module.exports = exports.default;
 
 /***/ }),
-/* 31 */
+/* 30 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -4730,7 +4681,7 @@ exports["default"] = _default;
 module.exports = exports.default;
 
 /***/ }),
-/* 32 */
+/* 31 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -4891,7 +4842,8 @@ var _default = function () {
           break;
 
         case _operations["default"].PNAccessManagerGrantToken:
-          operation = 'pam3';
+        case _operations["default"].PNAccessManagerRevokeToken:
+          operation = 'pamv3';
           break;
 
         default:
@@ -4909,7 +4861,7 @@ exports["default"] = _default;
 module.exports = exports.default;
 
 /***/ }),
-/* 33 */
+/* 32 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -4920,9 +4872,9 @@ var _interopRequireDefault = __webpack_require__(0);
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports["default"] = exports.FCMNotificationPayload = exports.MPNSNotificationPayload = exports.APNSNotificationPayload = void 0;
+exports["default"] = exports.MPNSNotificationPayload = exports.FCMNotificationPayload = exports.APNSNotificationPayload = void 0;
 
-var _objectWithoutProperties2 = _interopRequireDefault(__webpack_require__(34));
+var _objectWithoutProperties2 = _interopRequireDefault(__webpack_require__(33));
 
 var _assertThisInitialized2 = _interopRequireDefault(__webpack_require__(17));
 
@@ -4940,15 +4892,33 @@ var _defineProperty2 = _interopRequireDefault(__webpack_require__(4));
 
 var _flow_interfaces = __webpack_require__(2);
 
-function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+var _excluded = ["notification", "data"];
+
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) { symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); } keys.push.apply(keys, symbols); } return keys; }
 
 function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(Object(source), true).forEach(function (key) { (0, _defineProperty2["default"])(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
 
 function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = (0, _getPrototypeOf2["default"])(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = (0, _getPrototypeOf2["default"])(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return (0, _possibleConstructorReturn2["default"])(this, result); }; }
 
-function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Date.prototype.toString.call(Reflect.construct(Date, [], function () {})); return true; } catch (e) { return false; } }
+function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
 
 var BaseNotificationPayload = function () {
+  function BaseNotificationPayload(payload, title, body) {
+    (0, _classCallCheck2["default"])(this, BaseNotificationPayload);
+    (0, _defineProperty2["default"])(this, "_subtitle", void 0);
+    (0, _defineProperty2["default"])(this, "_payload", void 0);
+    (0, _defineProperty2["default"])(this, "_badge", void 0);
+    (0, _defineProperty2["default"])(this, "_sound", void 0);
+    (0, _defineProperty2["default"])(this, "_title", void 0);
+    (0, _defineProperty2["default"])(this, "_body", void 0);
+    this._payload = payload;
+
+    this._setDefaultPayloadStructure();
+
+    this.title = title;
+    this.body = body;
+  }
+
   (0, _createClass2["default"])(BaseNotificationPayload, [{
     key: "payload",
     get: function get() {
@@ -4979,25 +4949,7 @@ var BaseNotificationPayload = function () {
     set: function set(value) {
       this._sound = value;
     }
-  }]);
-
-  function BaseNotificationPayload(payload, title, body) {
-    (0, _classCallCheck2["default"])(this, BaseNotificationPayload);
-    (0, _defineProperty2["default"])(this, "_subtitle", void 0);
-    (0, _defineProperty2["default"])(this, "_payload", void 0);
-    (0, _defineProperty2["default"])(this, "_badge", void 0);
-    (0, _defineProperty2["default"])(this, "_sound", void 0);
-    (0, _defineProperty2["default"])(this, "_title", void 0);
-    (0, _defineProperty2["default"])(this, "_body", void 0);
-    this._payload = payload;
-
-    this._setDefaultPayloadStructure();
-
-    this.title = title;
-    this.body = body;
-  }
-
-  (0, _createClass2["default"])(BaseNotificationPayload, [{
+  }, {
     key: "_setDefaultPayloadStructure",
     value: function _setDefaultPayloadStructure() {}
   }, {
@@ -5031,6 +4983,72 @@ var APNSNotificationPayload = function (_BaseNotificationPayl) {
   }
 
   (0, _createClass2["default"])(APNSNotificationPayload, [{
+    key: "configurations",
+    set: function set(value) {
+      if (!value || !value.length) return;
+      this._configurations = value;
+    }
+  }, {
+    key: "notification",
+    get: function get() {
+      return this._payload.aps;
+    }
+  }, {
+    key: "title",
+    get: function get() {
+      return this._title;
+    },
+    set: function set(value) {
+      if (!value || !value.length) return;
+      this._payload.aps.alert.title = value;
+      this._title = value;
+    }
+  }, {
+    key: "subtitle",
+    get: function get() {
+      return this._subtitle;
+    },
+    set: function set(value) {
+      if (!value || !value.length) return;
+      this._payload.aps.alert.subtitle = value;
+      this._subtitle = value;
+    }
+  }, {
+    key: "body",
+    get: function get() {
+      return this._body;
+    },
+    set: function set(value) {
+      if (!value || !value.length) return;
+      this._payload.aps.alert.body = value;
+      this._body = value;
+    }
+  }, {
+    key: "badge",
+    get: function get() {
+      return this._badge;
+    },
+    set: function set(value) {
+      if (value === undefined || value === null) return;
+      this._payload.aps.badge = value;
+      this._badge = value;
+    }
+  }, {
+    key: "sound",
+    get: function get() {
+      return this._sound;
+    },
+    set: function set(value) {
+      if (!value || !value.length) return;
+      this._payload.aps.sound = value;
+      this._sound = value;
+    }
+  }, {
+    key: "silent",
+    set: function set(value) {
+      this._isSilent = value;
+    }
+  }, {
     key: "_setDefaultPayloadStructure",
     value: function _setDefaultPayloadStructure() {
       this._payload.aps = {
@@ -5134,72 +5152,6 @@ var APNSNotificationPayload = function (_BaseNotificationPayl) {
 
       return objectifiedTarget;
     }
-  }, {
-    key: "configurations",
-    set: function set(value) {
-      if (!value || !value.length) return;
-      this._configurations = value;
-    }
-  }, {
-    key: "notification",
-    get: function get() {
-      return this._payload.aps;
-    }
-  }, {
-    key: "title",
-    get: function get() {
-      return this._title;
-    },
-    set: function set(value) {
-      if (!value || !value.length) return;
-      this._payload.aps.alert.title = value;
-      this._title = value;
-    }
-  }, {
-    key: "subtitle",
-    get: function get() {
-      return this._subtitle;
-    },
-    set: function set(value) {
-      if (!value || !value.length) return;
-      this._payload.aps.alert.subtitle = value;
-      this._subtitle = value;
-    }
-  }, {
-    key: "body",
-    get: function get() {
-      return this._body;
-    },
-    set: function set(value) {
-      if (!value || !value.length) return;
-      this._payload.aps.alert.body = value;
-      this._body = value;
-    }
-  }, {
-    key: "badge",
-    get: function get() {
-      return this._badge;
-    },
-    set: function set(value) {
-      if (value === undefined || value === null) return;
-      this._payload.aps.badge = value;
-      this._badge = value;
-    }
-  }, {
-    key: "sound",
-    get: function get() {
-      return this._sound;
-    },
-    set: function set(value) {
-      if (!value || !value.length) return;
-      this._payload.aps.sound = value;
-      this._sound = value;
-    }
-  }, {
-    key: "silent",
-    set: function set(value) {
-      this._isSilent = value;
-    }
   }]);
   return APNSNotificationPayload;
 }(BaseNotificationPayload);
@@ -5229,11 +5181,6 @@ var MPNSNotificationPayload = function (_BaseNotificationPayl2) {
   }
 
   (0, _createClass2["default"])(MPNSNotificationPayload, [{
-    key: "toObject",
-    value: function toObject() {
-      return Object.keys(this._payload).length ? _objectSpread({}, this._payload) : null;
-    }
-  }, {
     key: "backContent",
     get: function get() {
       return this._backContent;
@@ -5307,6 +5254,11 @@ var MPNSNotificationPayload = function (_BaseNotificationPayl2) {
     set: function set(value) {
       this.count = value;
     }
+  }, {
+    key: "toObject",
+    value: function toObject() {
+      return Object.keys(this._payload).length ? _objectSpread({}, this._payload) : null;
+    }
   }]);
   return MPNSNotificationPayload;
 }(BaseNotificationPayload);
@@ -5335,44 +5287,6 @@ var FCMNotificationPayload = function (_BaseNotificationPayl3) {
   }
 
   (0, _createClass2["default"])(FCMNotificationPayload, [{
-    key: "_setDefaultPayloadStructure",
-    value: function _setDefaultPayloadStructure() {
-      this._payload.notification = {};
-      this._payload.data = {};
-    }
-  }, {
-    key: "toObject",
-    value: function toObject() {
-      var data = _objectSpread({}, this._payload.data);
-
-      var notification = null;
-      var payload = {};
-
-      if (Object.keys(this._payload).length > 2) {
-        var _this$_payload = this._payload,
-            initialNotification = _this$_payload.notification,
-            initialData = _this$_payload.data,
-            additionalData = (0, _objectWithoutProperties2["default"])(_this$_payload, ["notification", "data"]);
-        data = _objectSpread(_objectSpread({}, data), additionalData);
-      }
-
-      if (this._isSilent) {
-        data.notification = this._payload.notification;
-      } else {
-        notification = this._payload.notification;
-      }
-
-      if (Object.keys(data).length) {
-        payload.data = data;
-      }
-
-      if (notification && Object.keys(notification).length) {
-        payload.notification = notification;
-      }
-
-      return Object.keys(payload).length ? payload : null;
-    }
-  }, {
     key: "notification",
     get: function get() {
       return this._payload.notification;
@@ -5437,6 +5351,44 @@ var FCMNotificationPayload = function (_BaseNotificationPayl3) {
     set: function set(value) {
       this._isSilent = value;
     }
+  }, {
+    key: "_setDefaultPayloadStructure",
+    value: function _setDefaultPayloadStructure() {
+      this._payload.notification = {};
+      this._payload.data = {};
+    }
+  }, {
+    key: "toObject",
+    value: function toObject() {
+      var data = _objectSpread({}, this._payload.data);
+
+      var notification = null;
+      var payload = {};
+
+      if (Object.keys(this._payload).length > 2) {
+        var _this$_payload = this._payload,
+            initialNotification = _this$_payload.notification,
+            initialData = _this$_payload.data,
+            additionalData = (0, _objectWithoutProperties2["default"])(_this$_payload, _excluded);
+        data = _objectSpread(_objectSpread({}, data), additionalData);
+      }
+
+      if (this._isSilent) {
+        data.notification = this._payload.notification;
+      } else {
+        notification = this._payload.notification;
+      }
+
+      if (Object.keys(data).length) {
+        payload.data = data;
+      }
+
+      if (notification && Object.keys(notification).length) {
+        payload.notification = notification;
+      }
+
+      return Object.keys(payload).length ? payload : null;
+    }
   }]);
   return FCMNotificationPayload;
 }(BaseNotificationPayload);
@@ -5444,6 +5396,30 @@ var FCMNotificationPayload = function (_BaseNotificationPayl3) {
 exports.FCMNotificationPayload = FCMNotificationPayload;
 
 var NotificationsPayload = function () {
+  function NotificationsPayload(title, body) {
+    (0, _classCallCheck2["default"])(this, NotificationsPayload);
+    (0, _defineProperty2["default"])(this, "_payload", void 0);
+    (0, _defineProperty2["default"])(this, "_debugging", void 0);
+    (0, _defineProperty2["default"])(this, "_subtitle", void 0);
+    (0, _defineProperty2["default"])(this, "_badge", void 0);
+    (0, _defineProperty2["default"])(this, "_sound", void 0);
+    (0, _defineProperty2["default"])(this, "_title", void 0);
+    (0, _defineProperty2["default"])(this, "_body", void 0);
+    (0, _defineProperty2["default"])(this, "apns", void 0);
+    (0, _defineProperty2["default"])(this, "mpns", void 0);
+    (0, _defineProperty2["default"])(this, "fcm", void 0);
+    this._payload = {
+      apns: {},
+      mpns: {},
+      fcm: {}
+    };
+    this._title = title;
+    this._body = body;
+    this.apns = new APNSNotificationPayload(this._payload.apns, title, body);
+    this.mpns = new MPNSNotificationPayload(this._payload.mpns, title, body);
+    this.fcm = new FCMNotificationPayload(this._payload.fcm, title, body);
+  }
+
   (0, _createClass2["default"])(NotificationsPayload, [{
     key: "debugging",
     set: function set(value) {
@@ -5492,33 +5468,7 @@ var NotificationsPayload = function () {
       this.mpns.sound = value;
       this.fcm.sound = value;
     }
-  }]);
-
-  function NotificationsPayload(title, body) {
-    (0, _classCallCheck2["default"])(this, NotificationsPayload);
-    (0, _defineProperty2["default"])(this, "_payload", void 0);
-    (0, _defineProperty2["default"])(this, "_debugging", void 0);
-    (0, _defineProperty2["default"])(this, "_subtitle", void 0);
-    (0, _defineProperty2["default"])(this, "_badge", void 0);
-    (0, _defineProperty2["default"])(this, "_sound", void 0);
-    (0, _defineProperty2["default"])(this, "_title", void 0);
-    (0, _defineProperty2["default"])(this, "_body", void 0);
-    (0, _defineProperty2["default"])(this, "apns", void 0);
-    (0, _defineProperty2["default"])(this, "mpns", void 0);
-    (0, _defineProperty2["default"])(this, "fcm", void 0);
-    this._payload = {
-      apns: {},
-      mpns: {},
-      fcm: {}
-    };
-    this._title = title;
-    this._body = body;
-    this.apns = new APNSNotificationPayload(this._payload.apns, title, body);
-    this.mpns = new MPNSNotificationPayload(this._payload.mpns, title, body);
-    this.fcm = new FCMNotificationPayload(this._payload.fcm, title, body);
-  }
-
-  (0, _createClass2["default"])(NotificationsPayload, [{
+  }, {
     key: "buildPayload",
     value: function buildPayload(platforms) {
       var payload = {};
@@ -5562,10 +5512,10 @@ var _default = NotificationsPayload;
 exports["default"] = _default;
 
 /***/ }),
-/* 34 */
+/* 33 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var objectWithoutPropertiesLoose = __webpack_require__(35);
+var objectWithoutPropertiesLoose = __webpack_require__(34);
 
 function _objectWithoutProperties(source, excluded) {
   if (source == null) return {};
@@ -5587,9 +5537,10 @@ function _objectWithoutProperties(source, excluded) {
 }
 
 module.exports = _objectWithoutProperties;
+module.exports["default"] = module.exports, module.exports.__esModule = true;
 
 /***/ }),
-/* 35 */
+/* 34 */
 /***/ (function(module, exports) {
 
 function _objectWithoutPropertiesLoose(source, excluded) {
@@ -5608,9 +5559,10 @@ function _objectWithoutPropertiesLoose(source, excluded) {
 }
 
 module.exports = _objectWithoutPropertiesLoose;
+module.exports["default"] = module.exports, module.exports.__esModule = true;
 
 /***/ }),
-/* 36 */
+/* 35 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5622,8 +5574,6 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports["default"] = void 0;
-
-var _typeof2 = _interopRequireDefault(__webpack_require__(7));
 
 var _classCallCheck2 = _interopRequireDefault(__webpack_require__(5));
 
@@ -5640,154 +5590,48 @@ var _default = function () {
     (0, _classCallCheck2["default"])(this, _default);
     (0, _defineProperty2["default"])(this, "_config", void 0);
     (0, _defineProperty2["default"])(this, "_cbor", void 0);
-    (0, _defineProperty2["default"])(this, "_userTokens", void 0);
-    (0, _defineProperty2["default"])(this, "_spaceTokens", void 0);
-    (0, _defineProperty2["default"])(this, "_userToken", void 0);
-    (0, _defineProperty2["default"])(this, "_spaceToken", void 0);
+    (0, _defineProperty2["default"])(this, "_token", void 0);
     this._config = config;
     this._cbor = cbor;
-
-    this._initializeTokens();
   }
 
   (0, _createClass2["default"])(_default, [{
-    key: "_initializeTokens",
-    value: function _initializeTokens() {
-      this._userTokens = {};
-      this._spaceTokens = {};
-      this._userToken = undefined;
-      this._spaceToken = undefined;
-    }
-  }, {
-    key: "_setToken",
-    value: function _setToken(token) {
-      var _this = this;
-
-      var tokenObject = this.parseToken(token);
-
-      if (tokenObject && tokenObject.resources) {
-        if (tokenObject.resources.users) {
-          Object.keys(tokenObject.resources.users).forEach(function (id) {
-            _this._userTokens[id] = token;
-          });
-        }
-
-        if (tokenObject.resources.spaces) {
-          Object.keys(tokenObject.resources.spaces).forEach(function (id) {
-            _this._spaceTokens[id] = token;
-          });
-        }
-      }
-
-      if (tokenObject && tokenObject.patterns) {
-        if (tokenObject.patterns.users && Object.keys(tokenObject.patterns.users).length > 0) {
-          this._userToken = token;
-        }
-
-        if (tokenObject.patterns.spaces && Object.keys(tokenObject.patterns.spaces).length > 0) {
-          this._spaceToken = token;
-        }
-      }
-    }
-  }, {
     key: "setToken",
     value: function setToken(token) {
       if (token && token.length > 0) {
-        this._setToken(token);
-      }
-    }
-  }, {
-    key: "setTokens",
-    value: function setTokens(tokens) {
-      var _this2 = this;
-
-      if (tokens && tokens.length && (0, _typeof2["default"])(tokens) === 'object') {
-        tokens.forEach(function (token) {
-          _this2.setToken(token);
-        });
-      }
-    }
-  }, {
-    key: "getTokens",
-    value: function getTokens(tokenDef) {
-      var _this3 = this;
-
-      var result = {
-        users: {},
-        spaces: {}
-      };
-
-      if (tokenDef) {
-        if (tokenDef.user) {
-          result.user = this._userToken;
-        }
-
-        if (tokenDef.space) {
-          result.space = this._spaceToken;
-        }
-
-        if (tokenDef.users) {
-          tokenDef.users.forEach(function (user) {
-            result.users[user] = _this3._userTokens[user];
-          });
-        }
-
-        if (tokenDef.space) {
-          tokenDef.spaces.forEach(function (space) {
-            result.spaces[space] = _this3._spaceTokens[space];
-          });
-        }
+        this._token = token;
       } else {
-        if (this._userToken) {
-          result.user = this._userToken;
-        }
-
-        if (this._spaceToken) {
-          result.space = this._spaceToken;
-        }
-
-        Object.keys(this._userTokens).forEach(function (user) {
-          result.users[user] = _this3._userTokens[user];
-        });
-        Object.keys(this._spaceTokens).forEach(function (space) {
-          result.spaces[space] = _this3._spaceTokens[space];
-        });
+        this._token = undefined;
       }
-
-      return result;
     }
   }, {
     key: "getToken",
-    value: function getToken(type, id) {
-      var result;
-
-      if (id) {
-        if (type === 'user') {
-          result = this._userTokens[id];
-        } else if (type === 'space') {
-          result = this._spaceTokens[id];
-        }
-      } else if (type === 'user') {
-        result = this._userToken;
-      } else if (type === 'space') {
-        result = this._spaceToken;
-      }
-
-      return result;
+    value: function getToken() {
+      return this._token;
     }
   }, {
     key: "extractPermissions",
     value: function extractPermissions(permissions) {
       var permissionsResult = {
-        create: false,
         read: false,
         write: false,
         manage: false,
-        "delete": false
+        "delete": false,
+        get: false,
+        update: false,
+        join: false
       };
 
-      if ((permissions & 16) === 16) {
-        permissionsResult.create = true;
+      if ((permissions & 128) === 128) {
+        permissionsResult.join = true;
+      }
+
+      if ((permissions & 64) === 64) {
+        permissionsResult.update = true;
+      }
+
+      if ((permissions & 32) === 32) {
+        permissionsResult.get = true;
       }
 
       if ((permissions & 8) === 8) {
@@ -5811,94 +5655,77 @@ var _default = function () {
   }, {
     key: "parseToken",
     value: function parseToken(tokenString) {
-      var _this4 = this;
+      var _this = this;
 
       var parsed = this._cbor.decodeToken(tokenString);
 
       if (parsed !== undefined) {
-        var userResourcePermissions = Object.keys(parsed.res.usr);
-        var spaceResourcePermissions = Object.keys(parsed.res.spc);
+        var uuidResourcePermissions = parsed.res.uuid ? Object.keys(parsed.res.uuid) : [];
         var channelResourcePermissions = Object.keys(parsed.res.chan);
         var groupResourcePermissions = Object.keys(parsed.res.grp);
-        var userPatternPermissions = Object.keys(parsed.pat.usr);
-        var spacePatternPermissions = Object.keys(parsed.pat.spc);
+        var uuidPatternPermissions = parsed.pat.uuid ? Object.keys(parsed.pat.uuid) : [];
         var channelPatternPermissions = Object.keys(parsed.pat.chan);
         var groupPatternPermissions = Object.keys(parsed.pat.grp);
         var result = {
           version: parsed.v,
           timestamp: parsed.t,
-          ttl: parsed.ttl
+          ttl: parsed.ttl,
+          authorized_uuid: parsed.uuid
         };
-        var userResources = userResourcePermissions.length > 0;
-        var spaceResources = spaceResourcePermissions.length > 0;
+        var uuidResources = uuidResourcePermissions.length > 0;
         var channelResources = channelResourcePermissions.length > 0;
         var groupResources = groupResourcePermissions.length > 0;
 
-        if (userResources || spaceResources || channelResources || groupResources) {
+        if (uuidResources || channelResources || groupResources) {
           result.resources = {};
 
-          if (userResources) {
-            result.resources.users = {};
-            userResourcePermissions.forEach(function (id) {
-              result.resources.users[id] = _this4.extractPermissions(parsed.res.usr[id]);
-            });
-          }
-
-          if (spaceResources) {
-            result.resources.spaces = {};
-            spaceResourcePermissions.forEach(function (id) {
-              result.resources.spaces[id] = _this4.extractPermissions(parsed.res.spc[id]);
+          if (uuidResources) {
+            result.resources.uuids = {};
+            uuidResourcePermissions.forEach(function (id) {
+              result.resources.uuids[id] = _this.extractPermissions(parsed.res.uuid[id]);
             });
           }
 
           if (channelResources) {
             result.resources.channels = {};
             channelResourcePermissions.forEach(function (id) {
-              result.resources.channels[id] = _this4.extractPermissions(parsed.res.chan[id]);
+              result.resources.channels[id] = _this.extractPermissions(parsed.res.chan[id]);
             });
           }
 
           if (groupResources) {
             result.resources.groups = {};
             groupResourcePermissions.forEach(function (id) {
-              result.resources.groups[id] = _this4.extractPermissions(parsed.res.grp[id]);
+              result.resources.groups[id] = _this.extractPermissions(parsed.res.grp[id]);
             });
           }
         }
 
-        var userPatterns = userPatternPermissions.length > 0;
-        var spacePatterns = spacePatternPermissions.length > 0;
+        var uuidPatterns = uuidPatternPermissions.length > 0;
         var channelPatterns = channelPatternPermissions.length > 0;
         var groupPatterns = groupPatternPermissions.length > 0;
 
-        if (userPatterns || spacePatterns || channelPatterns || groupPatterns) {
+        if (uuidPatterns || channelPatterns || groupPatterns) {
           result.patterns = {};
 
-          if (userPatterns) {
-            result.patterns.users = {};
-            userPatternPermissions.forEach(function (id) {
-              result.patterns.users[id] = _this4.extractPermissions(parsed.pat.usr[id]);
-            });
-          }
-
-          if (spacePatterns) {
-            result.patterns.spaces = {};
-            spacePatternPermissions.forEach(function (id) {
-              result.patterns.spaces[id] = _this4.extractPermissions(parsed.pat.spc[id]);
+          if (uuidPatterns) {
+            result.patterns.uuids = {};
+            uuidPatternPermissions.forEach(function (id) {
+              result.patterns.uuids[id] = _this.extractPermissions(parsed.pat.uuid[id]);
             });
           }
 
           if (channelPatterns) {
             result.patterns.channels = {};
             channelPatternPermissions.forEach(function (id) {
-              result.patterns.channels[id] = _this4.extractPermissions(parsed.pat.chan[id]);
+              result.patterns.channels[id] = _this.extractPermissions(parsed.pat.chan[id]);
             });
           }
 
           if (groupPatterns) {
             result.patterns.groups = {};
             groupPatternPermissions.forEach(function (id) {
-              result.patterns.groups[id] = _this4.extractPermissions(parsed.pat.grp[id]);
+              result.patterns.groups[id] = _this.extractPermissions(parsed.pat.grp[id]);
             });
           }
         }
@@ -5913,11 +5740,6 @@ var _default = function () {
         return undefined;
       }
     }
-  }, {
-    key: "clearTokens",
-    value: function clearTokens() {
-      this._initializeTokens();
-    }
   }]);
   return _default;
 }();
@@ -5926,16 +5748,16 @@ exports["default"] = _default;
 module.exports = exports.default;
 
 /***/ }),
-/* 37 */
+/* 36 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var getPrototypeOf = __webpack_require__(11);
 
 var setPrototypeOf = __webpack_require__(13);
 
-var isNativeFunction = __webpack_require__(38);
+var isNativeFunction = __webpack_require__(37);
 
-var construct = __webpack_require__(39);
+var construct = __webpack_require__(38);
 
 function _wrapNativeSuper(Class) {
   var _cache = typeof Map === "function" ? new Map() : undefined;
@@ -5968,13 +5790,15 @@ function _wrapNativeSuper(Class) {
     return setPrototypeOf(Wrapper, Class);
   };
 
+  module.exports["default"] = module.exports, module.exports.__esModule = true;
   return _wrapNativeSuper(Class);
 }
 
 module.exports = _wrapNativeSuper;
+module.exports["default"] = module.exports, module.exports.__esModule = true;
 
 /***/ }),
-/* 38 */
+/* 37 */
 /***/ (function(module, exports) {
 
 function _isNativeFunction(fn) {
@@ -5982,18 +5806,20 @@ function _isNativeFunction(fn) {
 }
 
 module.exports = _isNativeFunction;
+module.exports["default"] = module.exports, module.exports.__esModule = true;
 
 /***/ }),
-/* 39 */
+/* 38 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var setPrototypeOf = __webpack_require__(13);
 
-var isNativeReflectConstruct = __webpack_require__(40);
+var isNativeReflectConstruct = __webpack_require__(39);
 
 function _construct(Parent, args, Class) {
   if (isNativeReflectConstruct()) {
     module.exports = _construct = Reflect.construct;
+    module.exports["default"] = module.exports, module.exports.__esModule = true;
   } else {
     module.exports = _construct = function _construct(Parent, args, Class) {
       var a = [null];
@@ -6003,15 +5829,18 @@ function _construct(Parent, args, Class) {
       if (Class) setPrototypeOf(instance, Class.prototype);
       return instance;
     };
+
+    module.exports["default"] = module.exports, module.exports.__esModule = true;
   }
 
   return _construct.apply(null, arguments);
 }
 
 module.exports = _construct;
+module.exports["default"] = module.exports, module.exports.__esModule = true;
 
 /***/ }),
-/* 40 */
+/* 39 */
 /***/ (function(module, exports) {
 
 function _isNativeReflectConstruct() {
@@ -6020,7 +5849,7 @@ function _isNativeReflectConstruct() {
   if (typeof Proxy === "function") return true;
 
   try {
-    Date.prototype.toString.call(Reflect.construct(Date, [], function () {}));
+    Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {}));
     return true;
   } catch (e) {
     return false;
@@ -6028,9 +5857,10 @@ function _isNativeReflectConstruct() {
 }
 
 module.exports = _isNativeReflectConstruct;
+module.exports["default"] = module.exports, module.exports.__esModule = true;
 
 /***/ }),
-/* 41 */
+/* 40 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -6042,12 +5872,12 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.getOperation = getOperation;
-exports.validateParams = validateParams;
-exports.getURL = getURL;
 exports.getRequestTimeout = getRequestTimeout;
+exports.getURL = getURL;
+exports.handleResponse = handleResponse;
 exports.isAuthSupported = isAuthSupported;
 exports.prepareParams = prepareParams;
-exports.handleResponse = handleResponse;
+exports.validateParams = validateParams;
 
 var _flow_interfaces = __webpack_require__(2);
 
@@ -6096,7 +5926,7 @@ function handleResponse() {
 }
 
 /***/ }),
-/* 42 */
+/* 41 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -6108,12 +5938,12 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.getOperation = getOperation;
-exports.validateParams = validateParams;
-exports.getURL = getURL;
 exports.getRequestTimeout = getRequestTimeout;
+exports.getURL = getURL;
+exports.handleResponse = handleResponse;
 exports.isAuthSupported = isAuthSupported;
 exports.prepareParams = prepareParams;
-exports.handleResponse = handleResponse;
+exports.validateParams = validateParams;
 
 var _flow_interfaces = __webpack_require__(2);
 
@@ -6162,7 +5992,7 @@ function handleResponse() {
 }
 
 /***/ }),
-/* 43 */
+/* 42 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -6174,12 +6004,12 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.getOperation = getOperation;
-exports.validateParams = validateParams;
-exports.getURL = getURL;
-exports.isAuthSupported = isAuthSupported;
 exports.getRequestTimeout = getRequestTimeout;
-exports.prepareParams = prepareParams;
+exports.getURL = getURL;
 exports.handleResponse = handleResponse;
+exports.isAuthSupported = isAuthSupported;
+exports.prepareParams = prepareParams;
+exports.validateParams = validateParams;
 
 var _flow_interfaces = __webpack_require__(2);
 
@@ -6222,7 +6052,7 @@ function handleResponse() {
 }
 
 /***/ }),
-/* 44 */
+/* 43 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -6234,12 +6064,12 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.getOperation = getOperation;
-exports.validateParams = validateParams;
-exports.getURL = getURL;
 exports.getRequestTimeout = getRequestTimeout;
+exports.getURL = getURL;
+exports.handleResponse = handleResponse;
 exports.isAuthSupported = isAuthSupported;
 exports.prepareParams = prepareParams;
-exports.handleResponse = handleResponse;
+exports.validateParams = validateParams;
 
 var _flow_interfaces = __webpack_require__(2);
 
@@ -6279,7 +6109,7 @@ function handleResponse(modules, serverResponse) {
 }
 
 /***/ }),
-/* 45 */
+/* 44 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -6291,12 +6121,12 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.getOperation = getOperation;
-exports.validateParams = validateParams;
-exports.getURL = getURL;
 exports.getRequestTimeout = getRequestTimeout;
+exports.getURL = getURL;
+exports.handleResponse = handleResponse;
 exports.isAuthSupported = isAuthSupported;
 exports.prepareParams = prepareParams;
-exports.handleResponse = handleResponse;
+exports.validateParams = validateParams;
 
 var _flow_interfaces = __webpack_require__(2);
 
@@ -6341,7 +6171,7 @@ function handleResponse(modules, serverResponse) {
 }
 
 /***/ }),
-/* 46 */
+/* 45 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -6353,12 +6183,12 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.getOperation = getOperation;
-exports.validateParams = validateParams;
-exports.getURL = getURL;
 exports.getRequestTimeout = getRequestTimeout;
+exports.getURL = getURL;
+exports.handleResponse = handleResponse;
 exports.isAuthSupported = isAuthSupported;
 exports.prepareParams = prepareParams;
-exports.handleResponse = handleResponse;
+exports.validateParams = validateParams;
 
 var _flow_interfaces = __webpack_require__(2);
 
@@ -6430,7 +6260,7 @@ function handleResponse() {
 }
 
 /***/ }),
-/* 47 */
+/* 46 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -6442,12 +6272,12 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.getOperation = getOperation;
-exports.validateParams = validateParams;
-exports.getURL = getURL;
 exports.getRequestTimeout = getRequestTimeout;
+exports.getURL = getURL;
+exports.handleResponse = handleResponse;
 exports.isAuthSupported = isAuthSupported;
 exports.prepareParams = prepareParams;
-exports.handleResponse = handleResponse;
+exports.validateParams = validateParams;
 
 var _flow_interfaces = __webpack_require__(2);
 
@@ -6519,7 +6349,7 @@ function handleResponse() {
 }
 
 /***/ }),
-/* 48 */
+/* 47 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -6531,12 +6361,12 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.getOperation = getOperation;
-exports.validateParams = validateParams;
-exports.getURL = getURL;
 exports.getRequestTimeout = getRequestTimeout;
+exports.getURL = getURL;
+exports.handleResponse = handleResponse;
 exports.isAuthSupported = isAuthSupported;
 exports.prepareParams = prepareParams;
-exports.handleResponse = handleResponse;
+exports.validateParams = validateParams;
 
 var _flow_interfaces = __webpack_require__(2);
 
@@ -6605,7 +6435,7 @@ function handleResponse(modules, serverResponse) {
 }
 
 /***/ }),
-/* 49 */
+/* 48 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -6617,12 +6447,12 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.getOperation = getOperation;
-exports.validateParams = validateParams;
-exports.getURL = getURL;
 exports.getRequestTimeout = getRequestTimeout;
+exports.getURL = getURL;
+exports.handleResponse = handleResponse;
 exports.isAuthSupported = isAuthSupported;
 exports.prepareParams = prepareParams;
-exports.handleResponse = handleResponse;
+exports.validateParams = validateParams;
 
 var _flow_interfaces = __webpack_require__(2);
 
@@ -6689,7 +6519,7 @@ function handleResponse() {
 }
 
 /***/ }),
-/* 50 */
+/* 49 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -6701,12 +6531,12 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.getOperation = getOperation;
-exports.validateParams = validateParams;
-exports.getURL = getURL;
 exports.getRequestTimeout = getRequestTimeout;
+exports.getURL = getURL;
+exports.handleResponse = handleResponse;
 exports.isAuthSupported = isAuthSupported;
 exports.prepareParams = prepareParams;
-exports.handleResponse = handleResponse;
+exports.validateParams = validateParams;
 
 var _flow_interfaces = __webpack_require__(2);
 
@@ -6757,7 +6587,7 @@ function handleResponse() {
 }
 
 /***/ }),
-/* 51 */
+/* 50 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -6769,12 +6599,12 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.getOperation = getOperation;
-exports.validateParams = validateParams;
-exports.getURL = getURL;
 exports.getRequestTimeout = getRequestTimeout;
+exports.getURL = getURL;
+exports.handleResponse = handleResponse;
 exports.isAuthSupported = isAuthSupported;
 exports.prepareParams = prepareParams;
-exports.handleResponse = handleResponse;
+exports.validateParams = validateParams;
 
 var _flow_interfaces = __webpack_require__(2);
 
@@ -6824,7 +6654,7 @@ function handleResponse(modules, serverResponse) {
 }
 
 /***/ }),
-/* 52 */
+/* 51 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -6836,12 +6666,12 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.getOperation = getOperation;
-exports.validateParams = validateParams;
-exports.getURL = getURL;
-exports.isAuthSupported = isAuthSupported;
 exports.getRequestTimeout = getRequestTimeout;
-exports.prepareParams = prepareParams;
+exports.getURL = getURL;
 exports.handleResponse = handleResponse;
+exports.isAuthSupported = isAuthSupported;
+exports.prepareParams = prepareParams;
+exports.validateParams = validateParams;
 
 var _flow_interfaces = __webpack_require__(2);
 
@@ -6897,7 +6727,7 @@ function handleResponse() {
 }
 
 /***/ }),
-/* 53 */
+/* 52 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -6909,12 +6739,12 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.getOperation = getOperation;
-exports.validateParams = validateParams;
-exports.getURL = getURL;
 exports.getRequestTimeout = getRequestTimeout;
+exports.getURL = getURL;
+exports.handleResponse = handleResponse;
 exports.isAuthSupported = isAuthSupported;
 exports.prepareParams = prepareParams;
-exports.handleResponse = handleResponse;
+exports.validateParams = validateParams;
 
 var _flow_interfaces = __webpack_require__(2);
 
@@ -6981,7 +6811,7 @@ function handleResponse(modules, serverResponse, incomingParams) {
 }
 
 /***/ }),
-/* 54 */
+/* 53 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -6993,12 +6823,12 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.getOperation = getOperation;
-exports.validateParams = validateParams;
-exports.getURL = getURL;
 exports.getRequestTimeout = getRequestTimeout;
+exports.getURL = getURL;
+exports.handleResponse = handleResponse;
 exports.isAuthSupported = isAuthSupported;
 exports.prepareParams = prepareParams;
-exports.handleResponse = handleResponse;
+exports.validateParams = validateParams;
 
 var _flow_interfaces = __webpack_require__(2);
 
@@ -7060,7 +6890,7 @@ function handleResponse(modules, serverResponse) {
 }
 
 /***/ }),
-/* 55 */
+/* 54 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7072,13 +6902,13 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.getOperation = getOperation;
-exports.validateParams = validateParams;
-exports.getURL = getURL;
 exports.getRequestTimeout = getRequestTimeout;
+exports.getURL = getURL;
+exports.handleError = handleError;
+exports.handleResponse = handleResponse;
 exports.isAuthSupported = isAuthSupported;
 exports.prepareParams = prepareParams;
-exports.handleResponse = handleResponse;
-exports.handleError = handleError;
+exports.validateParams = validateParams;
 
 var _defineProperty2 = _interopRequireDefault(__webpack_require__(4));
 
@@ -7088,7 +6918,7 @@ var _operations = _interopRequireDefault(__webpack_require__(1));
 
 var _utils = _interopRequireDefault(__webpack_require__(3));
 
-function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) { symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); } keys.push.apply(keys, symbols); } return keys; }
 
 function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(Object(source), true).forEach(function (key) { (0, _defineProperty2["default"])(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
 
@@ -7241,7 +7071,7 @@ function handleError(modules, params, status) {
 }
 
 /***/ }),
-/* 56 */
+/* 55 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7253,15 +7083,15 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.getOperation = getOperation;
-exports.validateParams = validateParams;
-exports.usePost = usePost;
-exports.postURL = postURL;
-exports.getRequestTimeout = getRequestTimeout;
 exports.getRequestHeaders = getRequestHeaders;
-exports.isAuthSupported = isAuthSupported;
-exports.prepareParams = prepareParams;
-exports.postPayload = postPayload;
+exports.getRequestTimeout = getRequestTimeout;
 exports.handleResponse = handleResponse;
+exports.isAuthSupported = isAuthSupported;
+exports.postPayload = postPayload;
+exports.postURL = postURL;
+exports.prepareParams = prepareParams;
+exports.usePost = usePost;
+exports.validateParams = validateParams;
 
 var _flow_interfaces = __webpack_require__(2);
 
@@ -7328,7 +7158,7 @@ function handleResponse(modules, addMessageActionResponse) {
 }
 
 /***/ }),
-/* 57 */
+/* 56 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7340,13 +7170,13 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.getOperation = getOperation;
-exports.validateParams = validateParams;
-exports.useDelete = useDelete;
-exports.getURL = getURL;
 exports.getRequestTimeout = getRequestTimeout;
+exports.getURL = getURL;
+exports.handleResponse = handleResponse;
 exports.isAuthSupported = isAuthSupported;
 exports.prepareParams = prepareParams;
-exports.handleResponse = handleResponse;
+exports.useDelete = useDelete;
+exports.validateParams = validateParams;
 
 var _flow_interfaces = __webpack_require__(2);
 
@@ -7401,7 +7231,7 @@ function handleResponse(modules, removeMessageActionResponse) {
 }
 
 /***/ }),
-/* 58 */
+/* 57 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7413,12 +7243,12 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.getOperation = getOperation;
-exports.validateParams = validateParams;
-exports.getURL = getURL;
 exports.getRequestTimeout = getRequestTimeout;
+exports.getURL = getURL;
+exports.handleResponse = handleResponse;
 exports.isAuthSupported = isAuthSupported;
 exports.prepareParams = prepareParams;
-exports.handleResponse = handleResponse;
+exports.validateParams = validateParams;
 
 var _flow_interfaces = __webpack_require__(2);
 
@@ -7479,6 +7309,13 @@ function handleResponse(modules, getMessageActionsResponse) {
 }
 
 /***/ }),
+/* 58 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+/***/ }),
 /* 59 */
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -7487,13 +7324,6 @@ function handleResponse(modules, getMessageActionsResponse) {
 
 /***/ }),
 /* 60 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-/***/ }),
-/* 61 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7515,7 +7345,7 @@ var endpoint = {
     return _operations["default"].PNListFilesOperation;
   },
   validateParams: function validateParams(_, params) {
-    if (!(params === null || params === void 0 ? void 0 : params.channel)) {
+    if (!(params !== null && params !== void 0 && params.channel)) {
       return 'channel can\'t be empty';
     }
   },
@@ -7529,10 +7359,6 @@ var endpoint = {
   },
   isAuthSupported: function isAuthSupported() {
     return true;
-  },
-  getAuthToken: function getAuthToken(_ref3) {
-    var tokenManager = _ref3.tokenManager;
-    return tokenManager.getToken('fileUpload');
   },
   prepareParams: function prepareParams(_, params) {
     var outParams = {};
@@ -7561,7 +7387,7 @@ exports["default"] = _default;
 module.exports = exports.default;
 
 /***/ }),
-/* 62 */
+/* 61 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7583,11 +7409,11 @@ var endpoint = {
     return _operations["default"].PNGenerateUploadUrlOperation;
   },
   validateParams: function validateParams(_, params) {
-    if (!(params === null || params === void 0 ? void 0 : params.channel)) {
+    if (!(params !== null && params !== void 0 && params.channel)) {
       return 'channel can\'t be empty';
     }
 
-    if (!(params === null || params === void 0 ? void 0 : params.name)) {
+    if (!(params !== null && params !== void 0 && params.name)) {
       return 'name can\'t be empty';
     }
   },
@@ -7610,10 +7436,6 @@ var endpoint = {
   isAuthSupported: function isAuthSupported() {
     return true;
   },
-  getAuthToken: function getAuthToken(_ref3) {
-    var tokenManager = _ref3.tokenManager;
-    return tokenManager.getToken('fileUpload');
-  },
   prepareParams: function prepareParams() {
     return {};
   },
@@ -7630,7 +7452,7 @@ exports["default"] = _default;
 module.exports = exports.default;
 
 /***/ }),
-/* 63 */
+/* 62 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7667,15 +7489,15 @@ var endpoint = {
     return _operations["default"].PNPublishFileOperation;
   },
   validateParams: function validateParams(_, params) {
-    if (!(params === null || params === void 0 ? void 0 : params.channel)) {
+    if (!(params !== null && params !== void 0 && params.channel)) {
       return "channel can't be empty";
     }
 
-    if (!(params === null || params === void 0 ? void 0 : params.fileId)) {
+    if (!(params !== null && params !== void 0 && params.fileId)) {
       return "file id can't be empty";
     }
 
-    if (!(params === null || params === void 0 ? void 0 : params.fileName)) {
+    if (!(params !== null && params !== void 0 && params.fileName)) {
       return "file name can't be empty";
     }
   },
@@ -7699,10 +7521,6 @@ var endpoint = {
   },
   isAuthSupported: function isAuthSupported() {
     return true;
-  },
-  getAuthToken: function getAuthToken(_ref3) {
-    var tokenManager = _ref3.tokenManager;
-    return tokenManager.getToken('fileUpload');
   },
   prepareParams: function prepareParams(_, params) {
     var outParams = {};
@@ -7732,7 +7550,7 @@ exports["default"] = _default;
 module.exports = exports.default;
 
 /***/ }),
-/* 64 */
+/* 63 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7952,20 +7770,15 @@ var sendFile = function sendFile(_ref) {
               throw new _endpoint.PubNubError('Upload to bucket was unsuccessful', result);
 
             case 82:
-              retries = 5;
+              retries = config.fileUploadPublishRetryLimit;
               wasSuccessful = false;
               publishResult = {
                 timetoken: '0'
               };
 
             case 85:
-              if (!(!wasSuccessful && retries > 0)) {
-                _context.next = 98;
-                break;
-              }
-
-              _context.prev = 86;
-              _context.next = 89;
+              _context.prev = 85;
+              _context.next = 88;
               return publishFile({
                 channel: channel,
                 message: message,
@@ -7976,24 +7789,26 @@ var sendFile = function sendFile(_ref) {
                 ttl: ttl
               });
 
-            case 89:
+            case 88:
               publishResult = _context.sent;
               wasSuccessful = true;
-              _context.next = 96;
+              _context.next = 95;
               break;
 
-            case 93:
-              _context.prev = 93;
-              _context.t17 = _context["catch"](86);
+            case 92:
+              _context.prev = 92;
+              _context.t17 = _context["catch"](85);
               retries -= 1;
 
-            case 96:
-              _context.next = 85;
-              break;
+            case 95:
+              if (!wasSuccessful && retries > 0) {
+                _context.next = 85;
+                break;
+              }
 
-            case 98:
+            case 96:
               if (wasSuccessful) {
-                _context.next = 102;
+                _context.next = 100;
                 break;
               }
 
@@ -8003,19 +7818,19 @@ var sendFile = function sendFile(_ref) {
                 name: name
               });
 
-            case 102:
+            case 100:
               return _context.abrupt("return", {
                 timetoken: publishResult.timetoken,
                 id: id,
                 name: name
               });
 
-            case 103:
+            case 101:
             case "end":
               return _context.stop();
           }
         }
-      }, _callee, null, [[21, 73], [86, 93]]);
+      }, _callee, null, [[21, 73], [85, 92]]);
     }));
 
     return function (_x) {
@@ -8046,7 +7861,7 @@ exports["default"] = _default;
 module.exports = exports.default;
 
 /***/ }),
-/* 65 */
+/* 64 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /**
@@ -8137,9 +7952,9 @@ var runtime = (function (exports) {
   // This is a polyfill for %IteratorPrototype% for environments that
   // don't natively support it.
   var IteratorPrototype = {};
-  IteratorPrototype[iteratorSymbol] = function () {
+  define(IteratorPrototype, iteratorSymbol, function () {
     return this;
-  };
+  });
 
   var getProto = Object.getPrototypeOf;
   var NativeIteratorPrototype = getProto && getProto(getProto(values([])));
@@ -8153,8 +7968,9 @@ var runtime = (function (exports) {
 
   var Gp = GeneratorFunctionPrototype.prototype =
     Generator.prototype = Object.create(IteratorPrototype);
-  GeneratorFunction.prototype = Gp.constructor = GeneratorFunctionPrototype;
-  GeneratorFunctionPrototype.constructor = GeneratorFunction;
+  GeneratorFunction.prototype = GeneratorFunctionPrototype;
+  define(Gp, "constructor", GeneratorFunctionPrototype);
+  define(GeneratorFunctionPrototype, "constructor", GeneratorFunction);
   GeneratorFunction.displayName = define(
     GeneratorFunctionPrototype,
     toStringTagSymbol,
@@ -8268,9 +8084,9 @@ var runtime = (function (exports) {
   }
 
   defineIteratorMethods(AsyncIterator.prototype);
-  AsyncIterator.prototype[asyncIteratorSymbol] = function () {
+  define(AsyncIterator.prototype, asyncIteratorSymbol, function () {
     return this;
-  };
+  });
   exports.AsyncIterator = AsyncIterator;
 
   // Note that simple async functions are implemented on top of
@@ -8463,13 +8279,13 @@ var runtime = (function (exports) {
   // iterator prototype chain incorrectly implement this, causing the Generator
   // object to not be returned from this call. This ensures that doesn't happen.
   // See https://github.com/facebook/regenerator/issues/274 for more details.
-  Gp[iteratorSymbol] = function() {
+  define(Gp, iteratorSymbol, function() {
     return this;
-  };
+  });
 
-  Gp.toString = function() {
+  define(Gp, "toString", function() {
     return "[object Generator]";
-  };
+  });
 
   function pushTryEntry(locs) {
     var entry = { tryLoc: locs[0] };
@@ -8788,19 +8604,24 @@ try {
 } catch (accidentalStrictMode) {
   // This module should not be running in strict mode, so the above
   // assignment should always work unless something is misconfigured. Just
-  // in case runtime.js accidentally runs in strict mode, we can escape
+  // in case runtime.js accidentally runs in strict mode, in modern engines
+  // we can explicitly access globalThis. In older engines we can escape
   // strict mode using a global Function call. This could conceivably fail
   // if a Content Security Policy forbids using Function, but in that case
   // the proper solution is to fix the accidental strict mode problem. If
   // you've misconfigured your bundler to force strict mode and applied a
   // CSP to forbid Function, and you're not willing to fix either of those
   // problems, please detail your unique predicament in a GitHub issue.
-  Function("r", "regeneratorRuntime = r")(runtime);
+  if (typeof globalThis === "object") {
+    globalThis.regeneratorRuntime = runtime;
+  } else {
+    Function("r", "regeneratorRuntime = r")(runtime);
+  }
 }
 
 
 /***/ }),
-/* 66 */
+/* 65 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -8821,7 +8642,8 @@ var _default = function _default(modules, _ref) {
   var channel = _ref.channel,
       id = _ref.id,
       name = _ref.name;
-  var config = modules.config;
+  var config = modules.config,
+      networking = modules.networking;
 
   if (!channel) {
     throw new _endpoint.PubNubError('Validation failed, check status for details', (0, _endpoint.createValidationError)("channel can't be empty"));
@@ -8857,17 +8679,17 @@ var _default = function _default(modules, _ref) {
   }).join('&');
 
   if (queryParams !== '') {
-    return "https://".concat(config.origin).concat(url, "?").concat(queryParams);
+    return "".concat(networking.getStandardOrigin()).concat(url, "?").concat(queryParams);
   }
 
-  return "https://".concat(config.origin).concat(url);
+  return "".concat(networking.getStandardOrigin()).concat(url);
 };
 
 exports["default"] = _default;
 module.exports = exports.default;
 
 /***/ }),
-/* 67 */
+/* 66 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -8893,15 +8715,15 @@ var endpoint = {
     return _operations["default"].PNDownloadFileOperation;
   },
   validateParams: function validateParams(_, params) {
-    if (!(params === null || params === void 0 ? void 0 : params.channel)) {
+    if (!(params !== null && params !== void 0 && params.channel)) {
       return "channel can't be empty";
     }
 
-    if (!(params === null || params === void 0 ? void 0 : params.name)) {
+    if (!(params !== null && params !== void 0 && params.name)) {
       return "name can't be empty";
     }
 
-    if (!(params === null || params === void 0 ? void 0 : params.id)) {
+    if (!(params !== null && params !== void 0 && params.id)) {
       return "id can't be empty";
     }
   },
@@ -8930,9 +8752,9 @@ var endpoint = {
   },
   handleResponse: function () {
     var _handleResponse = (0, _asyncToGenerator2["default"])(_regenerator["default"].mark(function _callee(_ref3, res, params) {
-      var _res$response$name;
+      var _params$cipherKey, _res$response$name;
 
-      var PubNubFile, config, cryptography, body, _params$cipherKey;
+      var PubNubFile, config, cryptography, body, _params$cipherKey2;
 
       return _regenerator["default"].wrap(function _callee$(_context) {
         while (1) {
@@ -8941,13 +8763,13 @@ var endpoint = {
               PubNubFile = _ref3.PubNubFile, config = _ref3.config, cryptography = _ref3.cryptography;
               body = res.response.body;
 
-              if (!(PubNubFile.supportsEncryptFile && config.cipherKey)) {
+              if (!(PubNubFile.supportsEncryptFile && ((_params$cipherKey = params.cipherKey) !== null && _params$cipherKey !== void 0 ? _params$cipherKey : config.cipherKey))) {
                 _context.next = 6;
                 break;
               }
 
               _context.next = 5;
-              return cryptography.decrypt((_params$cipherKey = params.cipherKey) !== null && _params$cipherKey !== void 0 ? _params$cipherKey : config.cipherKey, body);
+              return cryptography.decrypt((_params$cipherKey2 = params.cipherKey) !== null && _params$cipherKey2 !== void 0 ? _params$cipherKey2 : config.cipherKey, body);
 
             case 5:
               body = _context.sent;
@@ -8979,7 +8801,7 @@ exports["default"] = _default;
 module.exports = exports.default;
 
 /***/ }),
-/* 68 */
+/* 67 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -9001,15 +8823,15 @@ var endpoint = {
     return _operations["default"].PNListFilesOperation;
   },
   validateParams: function validateParams(_, params) {
-    if (!(params === null || params === void 0 ? void 0 : params.channel)) {
+    if (!(params !== null && params !== void 0 && params.channel)) {
       return "channel can't be empty";
     }
 
-    if (!(params === null || params === void 0 ? void 0 : params.id)) {
+    if (!(params !== null && params !== void 0 && params.id)) {
       return "file id can't be empty";
     }
 
-    if (!(params === null || params === void 0 ? void 0 : params.name)) {
+    if (!(params !== null && params !== void 0 && params.name)) {
       return "file name can't be empty";
     }
   },
@@ -9027,10 +8849,6 @@ var endpoint = {
   isAuthSupported: function isAuthSupported() {
     return true;
   },
-  getAuthToken: function getAuthToken(_ref3) {
-    var tokenManager = _ref3.tokenManager;
-    return tokenManager.getToken('fileUpload');
-  },
   prepareParams: function prepareParams() {
     return {};
   },
@@ -9045,7 +8863,7 @@ exports["default"] = _default;
 module.exports = exports.default;
 
 /***/ }),
-/* 69 */
+/* 68 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -9078,50 +8896,46 @@ var endpoint = {
   isAuthSupported: function isAuthSupported() {
     return true;
   },
-  getAuthToken: function getAuthToken(_ref3) {
-    var tokenManager = _ref3.tokenManager;
-    return tokenManager.getToken('user');
-  },
   prepareParams: function prepareParams(_modules, params) {
     var _params$include, _params$include2, _params$page, _params$page3, _params$limit;
 
     var queryParams = {};
 
-    if (params === null || params === void 0 ? void 0 : (_params$include = params.include) === null || _params$include === void 0 ? void 0 : _params$include.customFields) {
+    if (params !== null && params !== void 0 && (_params$include = params.include) !== null && _params$include !== void 0 && _params$include.customFields) {
       queryParams.include = 'custom';
     }
 
-    if (params === null || params === void 0 ? void 0 : (_params$include2 = params.include) === null || _params$include2 === void 0 ? void 0 : _params$include2.totalCount) {
+    if (params !== null && params !== void 0 && (_params$include2 = params.include) !== null && _params$include2 !== void 0 && _params$include2.totalCount) {
       var _params$include3;
 
       queryParams.count = (_params$include3 = params.include) === null || _params$include3 === void 0 ? void 0 : _params$include3.totalCount;
     }
 
-    if (params === null || params === void 0 ? void 0 : (_params$page = params.page) === null || _params$page === void 0 ? void 0 : _params$page.next) {
+    if (params !== null && params !== void 0 && (_params$page = params.page) !== null && _params$page !== void 0 && _params$page.next) {
       var _params$page2;
 
       queryParams.start = (_params$page2 = params.page) === null || _params$page2 === void 0 ? void 0 : _params$page2.next;
     }
 
-    if (params === null || params === void 0 ? void 0 : (_params$page3 = params.page) === null || _params$page3 === void 0 ? void 0 : _params$page3.prev) {
+    if (params !== null && params !== void 0 && (_params$page3 = params.page) !== null && _params$page3 !== void 0 && _params$page3.prev) {
       var _params$page4;
 
       queryParams.end = (_params$page4 = params.page) === null || _params$page4 === void 0 ? void 0 : _params$page4.prev;
     }
 
-    if (params === null || params === void 0 ? void 0 : params.filter) {
+    if (params !== null && params !== void 0 && params.filter) {
       queryParams.filter = params.filter;
     }
 
     queryParams.limit = (_params$limit = params === null || params === void 0 ? void 0 : params.limit) !== null && _params$limit !== void 0 ? _params$limit : 100;
 
-    if (params === null || params === void 0 ? void 0 : params.sort) {
+    if (params !== null && params !== void 0 && params.sort) {
       var _params$sort;
 
-      queryParams.sort = Object.entries((_params$sort = params.sort) !== null && _params$sort !== void 0 ? _params$sort : {}).map(function (_ref4) {
-        var _ref5 = (0, _slicedToArray2["default"])(_ref4, 2),
-            key = _ref5[0],
-            value = _ref5[1];
+      queryParams.sort = Object.entries((_params$sort = params.sort) !== null && _params$sort !== void 0 ? _params$sort : {}).map(function (_ref3) {
+        var _ref4 = (0, _slicedToArray2["default"])(_ref3, 2),
+            key = _ref4[0],
+            value = _ref4[1];
 
         if (value === 'asc' || value === 'desc') {
           return "".concat(key, ":").concat(value);
@@ -9148,7 +8962,7 @@ exports["default"] = _default;
 module.exports = exports.default;
 
 /***/ }),
-/* 70 */
+/* 69 */
 /***/ (function(module, exports) {
 
 function _arrayWithHoles(arr) {
@@ -9156,20 +8970,24 @@ function _arrayWithHoles(arr) {
 }
 
 module.exports = _arrayWithHoles;
+module.exports["default"] = module.exports, module.exports.__esModule = true;
 
 /***/ }),
-/* 71 */
+/* 70 */
 /***/ (function(module, exports) {
 
 function _iterableToArrayLimit(arr, i) {
-  if (typeof Symbol === "undefined" || !(Symbol.iterator in Object(arr))) return;
+  var _i = arr == null ? null : typeof Symbol !== "undefined" && arr[Symbol.iterator] || arr["@@iterator"];
+
+  if (_i == null) return;
   var _arr = [];
   var _n = true;
   var _d = false;
-  var _e = undefined;
+
+  var _s, _e;
 
   try {
-    for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) {
+    for (_i = _i.call(arr); !(_n = (_s = _i.next()).done); _n = true) {
       _arr.push(_s.value);
 
       if (i && _arr.length === i) break;
@@ -9189,12 +9007,13 @@ function _iterableToArrayLimit(arr, i) {
 }
 
 module.exports = _iterableToArrayLimit;
+module.exports["default"] = module.exports, module.exports.__esModule = true;
 
 /***/ }),
-/* 72 */
+/* 71 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var arrayLikeToArray = __webpack_require__(73);
+var arrayLikeToArray = __webpack_require__(72);
 
 function _unsupportedIterableToArray(o, minLen) {
   if (!o) return;
@@ -9206,9 +9025,10 @@ function _unsupportedIterableToArray(o, minLen) {
 }
 
 module.exports = _unsupportedIterableToArray;
+module.exports["default"] = module.exports, module.exports.__esModule = true;
 
 /***/ }),
-/* 73 */
+/* 72 */
 /***/ (function(module, exports) {
 
 function _arrayLikeToArray(arr, len) {
@@ -9222,9 +9042,10 @@ function _arrayLikeToArray(arr, len) {
 }
 
 module.exports = _arrayLikeToArray;
+module.exports["default"] = module.exports, module.exports.__esModule = true;
 
 /***/ }),
-/* 74 */
+/* 73 */
 /***/ (function(module, exports) {
 
 function _nonIterableRest() {
@@ -9232,9 +9053,10 @@ function _nonIterableRest() {
 }
 
 module.exports = _nonIterableRest;
+module.exports["default"] = module.exports, module.exports.__esModule = true;
 
 /***/ }),
-/* 75 */
+/* 74 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -9269,14 +9091,10 @@ var endpoint = {
   isAuthSupported: function isAuthSupported() {
     return true;
   },
-  getAuthToken: function getAuthToken(_ref3) {
-    var tokenManager = _ref3.tokenManager;
-    return tokenManager.getToken('user');
-  },
-  prepareParams: function prepareParams(_ref4, params) {
+  prepareParams: function prepareParams(_ref3, params) {
     var _params$uuid2, _params$include$custo, _params$include;
 
-    var config = _ref4.config;
+    var config = _ref3.config;
     return {
       uuid: (_params$uuid2 = params === null || params === void 0 ? void 0 : params.uuid) !== null && _params$uuid2 !== void 0 ? _params$uuid2 : config.getUUID(),
       include: ((_params$include$custo = params === null || params === void 0 ? void 0 : (_params$include = params.include) === null || _params$include === void 0 ? void 0 : _params$include.customFields) !== null && _params$include$custo !== void 0 ? _params$include$custo : true) && 'custom'
@@ -9294,7 +9112,7 @@ exports["default"] = _default;
 module.exports = exports.default;
 
 /***/ }),
-/* 76 */
+/* 75 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -9316,7 +9134,7 @@ var endpoint = {
     return _operations["default"].PNSetUUIDMetadataOperation;
   },
   validateParams: function validateParams(_, params) {
-    if (!(params === null || params === void 0 ? void 0 : params.data)) {
+    if (!(params !== null && params !== void 0 && params.data)) {
       return 'Data cannot be empty';
     }
   },
@@ -9339,14 +9157,10 @@ var endpoint = {
   isAuthSupported: function isAuthSupported() {
     return true;
   },
-  getAuthToken: function getAuthToken(_ref3) {
-    var tokenManager = _ref3.tokenManager;
-    return tokenManager.getToken('user');
-  },
-  prepareParams: function prepareParams(_ref4, params) {
+  prepareParams: function prepareParams(_ref3, params) {
     var _params$uuid2, _params$include$custo, _params$include;
 
-    var config = _ref4.config;
+    var config = _ref3.config;
     return {
       uuid: (_params$uuid2 = params === null || params === void 0 ? void 0 : params.uuid) !== null && _params$uuid2 !== void 0 ? _params$uuid2 : config.getUUID(),
       include: ((_params$include$custo = params === null || params === void 0 ? void 0 : (_params$include = params.include) === null || _params$include === void 0 ? void 0 : _params$include.customFields) !== null && _params$include$custo !== void 0 ? _params$include$custo : true) && 'custom'
@@ -9364,7 +9178,7 @@ exports["default"] = _default;
 module.exports = exports.default;
 
 /***/ }),
-/* 77 */
+/* 76 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -9402,14 +9216,10 @@ var endpoint = {
   isAuthSupported: function isAuthSupported() {
     return true;
   },
-  getAuthToken: function getAuthToken(_ref3) {
-    var tokenManager = _ref3.tokenManager;
-    return tokenManager.getToken('user');
-  },
-  prepareParams: function prepareParams(_ref4, params) {
+  prepareParams: function prepareParams(_ref3, params) {
     var _params$uuid2;
 
-    var config = _ref4.config;
+    var config = _ref3.config;
     return {
       uuid: (_params$uuid2 = params === null || params === void 0 ? void 0 : params.uuid) !== null && _params$uuid2 !== void 0 ? _params$uuid2 : config.getUUID()
     };
@@ -9426,7 +9236,7 @@ exports["default"] = _default;
 module.exports = exports.default;
 
 /***/ }),
-/* 78 */
+/* 77 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -9459,50 +9269,46 @@ var endpoint = {
   isAuthSupported: function isAuthSupported() {
     return true;
   },
-  getAuthToken: function getAuthToken(_ref3) {
-    var tokenManager = _ref3.tokenManager;
-    return tokenManager.getToken('channel');
-  },
   prepareParams: function prepareParams(_modules, params) {
     var _params$include, _params$include2, _params$page, _params$page3, _params$limit;
 
     var queryParams = {};
 
-    if (params === null || params === void 0 ? void 0 : (_params$include = params.include) === null || _params$include === void 0 ? void 0 : _params$include.customFields) {
+    if (params !== null && params !== void 0 && (_params$include = params.include) !== null && _params$include !== void 0 && _params$include.customFields) {
       queryParams.include = 'custom';
     }
 
-    if (params === null || params === void 0 ? void 0 : (_params$include2 = params.include) === null || _params$include2 === void 0 ? void 0 : _params$include2.totalCount) {
+    if (params !== null && params !== void 0 && (_params$include2 = params.include) !== null && _params$include2 !== void 0 && _params$include2.totalCount) {
       var _params$include3;
 
       queryParams.count = (_params$include3 = params.include) === null || _params$include3 === void 0 ? void 0 : _params$include3.totalCount;
     }
 
-    if (params === null || params === void 0 ? void 0 : (_params$page = params.page) === null || _params$page === void 0 ? void 0 : _params$page.next) {
+    if (params !== null && params !== void 0 && (_params$page = params.page) !== null && _params$page !== void 0 && _params$page.next) {
       var _params$page2;
 
       queryParams.start = (_params$page2 = params.page) === null || _params$page2 === void 0 ? void 0 : _params$page2.next;
     }
 
-    if (params === null || params === void 0 ? void 0 : (_params$page3 = params.page) === null || _params$page3 === void 0 ? void 0 : _params$page3.prev) {
+    if (params !== null && params !== void 0 && (_params$page3 = params.page) !== null && _params$page3 !== void 0 && _params$page3.prev) {
       var _params$page4;
 
       queryParams.end = (_params$page4 = params.page) === null || _params$page4 === void 0 ? void 0 : _params$page4.prev;
     }
 
-    if (params === null || params === void 0 ? void 0 : params.filter) {
+    if (params !== null && params !== void 0 && params.filter) {
       queryParams.filter = params.filter;
     }
 
     queryParams.limit = (_params$limit = params === null || params === void 0 ? void 0 : params.limit) !== null && _params$limit !== void 0 ? _params$limit : 100;
 
-    if (params === null || params === void 0 ? void 0 : params.sort) {
+    if (params !== null && params !== void 0 && params.sort) {
       var _params$sort;
 
-      queryParams.sort = Object.entries((_params$sort = params.sort) !== null && _params$sort !== void 0 ? _params$sort : {}).map(function (_ref4) {
-        var _ref5 = (0, _slicedToArray2["default"])(_ref4, 2),
-            key = _ref5[0],
-            value = _ref5[1];
+      queryParams.sort = Object.entries((_params$sort = params.sort) !== null && _params$sort !== void 0 ? _params$sort : {}).map(function (_ref3) {
+        var _ref4 = (0, _slicedToArray2["default"])(_ref3, 2),
+            key = _ref4[0],
+            value = _ref4[1];
 
         if (value === 'asc' || value === 'desc') {
           return "".concat(key, ":").concat(value);
@@ -9521,6 +9327,62 @@ var endpoint = {
       totalCount: response.totalCount,
       prev: response.prev,
       next: response.next
+    };
+  }
+};
+var _default = endpoint;
+exports["default"] = _default;
+module.exports = exports.default;
+
+/***/ }),
+/* 78 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var _interopRequireDefault = __webpack_require__(0);
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports["default"] = void 0;
+
+var _operations = _interopRequireDefault(__webpack_require__(1));
+
+var _utils = _interopRequireDefault(__webpack_require__(3));
+
+var endpoint = {
+  getOperation: function getOperation() {
+    return _operations["default"].PNGetChannelMetadataOperation;
+  },
+  validateParams: function validateParams(_, params) {
+    if (!(params !== null && params !== void 0 && params.channel)) {
+      return 'Channel cannot be empty';
+    }
+  },
+  getURL: function getURL(_ref, params) {
+    var config = _ref.config;
+    return "/v2/objects/".concat(config.subscribeKey, "/channels/").concat(_utils["default"].encodeString(params.channel));
+  },
+  getRequestTimeout: function getRequestTimeout(_ref2) {
+    var config = _ref2.config;
+    return config.getTransactionTimeout();
+  },
+  isAuthSupported: function isAuthSupported() {
+    return true;
+  },
+  prepareParams: function prepareParams(_, params) {
+    var _params$include$custo, _params$include;
+
+    return {
+      include: ((_params$include$custo = params === null || params === void 0 ? void 0 : (_params$include = params.include) === null || _params$include === void 0 ? void 0 : _params$include.customFields) !== null && _params$include$custo !== void 0 ? _params$include$custo : true) && 'custom'
+    };
+  },
+  handleResponse: function handleResponse(_, response) {
+    return {
+      status: response.status,
+      data: response.data
     };
   }
 };
@@ -9548,16 +9410,26 @@ var _utils = _interopRequireDefault(__webpack_require__(3));
 
 var endpoint = {
   getOperation: function getOperation() {
-    return _operations["default"].PNGetChannelMetadataOperation;
+    return _operations["default"].PNSetChannelMetadataOperation;
   },
   validateParams: function validateParams(_, params) {
-    if (!(params === null || params === void 0 ? void 0 : params.channel)) {
+    if (!(params !== null && params !== void 0 && params.channel)) {
       return 'Channel cannot be empty';
     }
+
+    if (!(params !== null && params !== void 0 && params.data)) {
+      return 'Data cannot be empty';
+    }
   },
-  getURL: function getURL(_ref, params) {
+  usePatch: function usePatch() {
+    return true;
+  },
+  patchURL: function patchURL(_ref, params) {
     var config = _ref.config;
     return "/v2/objects/".concat(config.subscribeKey, "/channels/").concat(_utils["default"].encodeString(params.channel));
+  },
+  patchPayload: function patchPayload(_, params) {
+    return params.data;
   },
   getRequestTimeout: function getRequestTimeout(_ref2) {
     var config = _ref2.config;
@@ -9565,10 +9437,6 @@ var endpoint = {
   },
   isAuthSupported: function isAuthSupported() {
     return true;
-  },
-  getAuthToken: function getAuthToken(_ref3) {
-    var tokenManager = _ref3.tokenManager;
-    return tokenManager.getToken('channel');
   },
   prepareParams: function prepareParams(_, params) {
     var _params$include$custo, _params$include;
@@ -9608,26 +9476,19 @@ var _utils = _interopRequireDefault(__webpack_require__(3));
 
 var endpoint = {
   getOperation: function getOperation() {
-    return _operations["default"].PNSetChannelMetadataOperation;
+    return _operations["default"].PNRemoveChannelMetadataOperation;
   },
   validateParams: function validateParams(_, params) {
-    if (!(params === null || params === void 0 ? void 0 : params.channel)) {
+    if (!(params !== null && params !== void 0 && params.channel)) {
       return 'Channel cannot be empty';
     }
-
-    if (!(params === null || params === void 0 ? void 0 : params.data)) {
-      return 'Data cannot be empty';
-    }
   },
-  usePatch: function usePatch() {
-    return true;
-  },
-  patchURL: function patchURL(_ref, params) {
+  getURL: function getURL(_ref, params) {
     var config = _ref.config;
     return "/v2/objects/".concat(config.subscribeKey, "/channels/").concat(_utils["default"].encodeString(params.channel));
   },
-  patchPayload: function patchPayload(_, params) {
-    return params.data;
+  useDelete: function useDelete() {
+    return true;
   },
   getRequestTimeout: function getRequestTimeout(_ref2) {
     var config = _ref2.config;
@@ -9636,16 +9497,8 @@ var endpoint = {
   isAuthSupported: function isAuthSupported() {
     return true;
   },
-  getAuthToken: function getAuthToken(_ref3) {
-    var tokenManager = _ref3.tokenManager;
-    return tokenManager.getToken('channel');
-  },
-  prepareParams: function prepareParams(_, params) {
-    var _params$include$custo, _params$include;
-
-    return {
-      include: ((_params$include$custo = params === null || params === void 0 ? void 0 : (_params$include = params.include) === null || _params$include === void 0 ? void 0 : _params$include.customFields) !== null && _params$include$custo !== void 0 ? _params$include$custo : true) && 'custom'
-    };
+  prepareParams: function prepareParams() {
+    return {};
   },
   handleResponse: function handleResponse(_, response) {
     return {
@@ -9672,25 +9525,24 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports["default"] = void 0;
 
+var _slicedToArray2 = _interopRequireDefault(__webpack_require__(9));
+
 var _operations = _interopRequireDefault(__webpack_require__(1));
 
 var _utils = _interopRequireDefault(__webpack_require__(3));
 
 var endpoint = {
   getOperation: function getOperation() {
-    return _operations["default"].PNRemoveChannelMetadataOperation;
+    return _operations["default"].PNGetMembersOperation;
   },
   validateParams: function validateParams(_, params) {
-    if (!(params === null || params === void 0 ? void 0 : params.channel)) {
-      return 'Channel cannot be empty';
+    if (!(params !== null && params !== void 0 && params.channel)) {
+      return 'UUID cannot be empty';
     }
   },
   getURL: function getURL(_ref, params) {
     var config = _ref.config;
-    return "/v2/objects/".concat(config.subscribeKey, "/channels/").concat(_utils["default"].encodeString(params.channel));
-  },
-  useDelete: function useDelete() {
-    return true;
+    return "/v2/objects/".concat(config.subscribeKey, "/channels/").concat(_utils["default"].encodeString(params.channel), "/uuids");
   },
   getRequestTimeout: function getRequestTimeout(_ref2) {
     var config = _ref2.config;
@@ -9699,17 +9551,80 @@ var endpoint = {
   isAuthSupported: function isAuthSupported() {
     return true;
   },
-  getAuthToken: function getAuthToken(_ref3) {
-    var tokenManager = _ref3.tokenManager;
-    return tokenManager.getToken('channel');
-  },
-  prepareParams: function prepareParams() {
-    return {};
+  prepareParams: function prepareParams(_modules, params) {
+    var _params$include4, _params$page, _params$page3, _params$limit;
+
+    var queryParams = {};
+
+    if (params !== null && params !== void 0 && params.include) {
+      var _params$include, _params$include2, _params$include$UUIDF, _params$include3;
+
+      queryParams.include = [];
+
+      if ((_params$include = params.include) !== null && _params$include !== void 0 && _params$include.customFields) {
+        queryParams.include.push('custom');
+      }
+
+      if ((_params$include2 = params.include) !== null && _params$include2 !== void 0 && _params$include2.customUUIDFields) {
+        queryParams.include.push('uuid.custom');
+      }
+
+      if ((_params$include$UUIDF = (_params$include3 = params.include) === null || _params$include3 === void 0 ? void 0 : _params$include3.UUIDFields) !== null && _params$include$UUIDF !== void 0 ? _params$include$UUIDF : true) {
+        queryParams.include.push('uuid');
+      }
+
+      queryParams.include = queryParams.include.join(',');
+    }
+
+    if (params !== null && params !== void 0 && (_params$include4 = params.include) !== null && _params$include4 !== void 0 && _params$include4.totalCount) {
+      var _params$include5;
+
+      queryParams.count = (_params$include5 = params.include) === null || _params$include5 === void 0 ? void 0 : _params$include5.totalCount;
+    }
+
+    if (params !== null && params !== void 0 && (_params$page = params.page) !== null && _params$page !== void 0 && _params$page.next) {
+      var _params$page2;
+
+      queryParams.start = (_params$page2 = params.page) === null || _params$page2 === void 0 ? void 0 : _params$page2.next;
+    }
+
+    if (params !== null && params !== void 0 && (_params$page3 = params.page) !== null && _params$page3 !== void 0 && _params$page3.prev) {
+      var _params$page4;
+
+      queryParams.end = (_params$page4 = params.page) === null || _params$page4 === void 0 ? void 0 : _params$page4.prev;
+    }
+
+    if (params !== null && params !== void 0 && params.filter) {
+      queryParams.filter = params.filter;
+    }
+
+    queryParams.limit = (_params$limit = params === null || params === void 0 ? void 0 : params.limit) !== null && _params$limit !== void 0 ? _params$limit : 100;
+
+    if (params !== null && params !== void 0 && params.sort) {
+      var _params$sort;
+
+      queryParams.sort = Object.entries((_params$sort = params.sort) !== null && _params$sort !== void 0 ? _params$sort : {}).map(function (_ref3) {
+        var _ref4 = (0, _slicedToArray2["default"])(_ref3, 2),
+            key = _ref4[0],
+            value = _ref4[1];
+
+        if (value === 'asc' || value === 'desc') {
+          return "".concat(key, ":").concat(value);
+        } else {
+          return key;
+        }
+      });
+    }
+
+    return queryParams;
   },
   handleResponse: function handleResponse(_, response) {
     return {
       status: response.status,
-      data: response.data
+      data: response.data,
+      totalCount: response.totalCount,
+      prev: response.prev,
+      next: response.next
     };
   }
 };
@@ -9733,84 +9648,110 @@ exports["default"] = void 0;
 
 var _slicedToArray2 = _interopRequireDefault(__webpack_require__(9));
 
+var _defineProperty2 = _interopRequireDefault(__webpack_require__(4));
+
 var _operations = _interopRequireDefault(__webpack_require__(1));
 
 var _utils = _interopRequireDefault(__webpack_require__(3));
 
 var endpoint = {
   getOperation: function getOperation() {
-    return _operations["default"].PNGetMembersOperation;
+    return _operations["default"].PNSetMembersOperation;
   },
   validateParams: function validateParams(_, params) {
-    if (!(params === null || params === void 0 ? void 0 : params.channel)) {
-      return 'UUID cannot be empty';
+    if (!(params !== null && params !== void 0 && params.channel)) {
+      return 'Channel cannot be empty';
+    }
+
+    if (!(params !== null && params !== void 0 && params.uuids) || (params === null || params === void 0 ? void 0 : params.uuids.length) === 0) {
+      return 'UUIDs cannot be empty';
     }
   },
-  getURL: function getURL(_ref, params) {
+  usePatch: function usePatch() {
+    return true;
+  },
+  patchURL: function patchURL(_ref, params) {
     var config = _ref.config;
     return "/v2/objects/".concat(config.subscribeKey, "/channels/").concat(_utils["default"].encodeString(params.channel), "/uuids");
   },
-  getRequestTimeout: function getRequestTimeout(_ref2) {
-    var config = _ref2.config;
+  patchPayload: function patchPayload(_, params) {
+    return (0, _defineProperty2["default"])({
+      set: [],
+      remove: []
+    }, params.type, params.uuids.map(function (uuid) {
+      if (typeof uuid === 'string') {
+        return {
+          uuid: {
+            id: uuid
+          }
+        };
+      } else {
+        return {
+          uuid: {
+            id: uuid.id
+          },
+          custom: uuid.custom
+        };
+      }
+    }));
+  },
+  getRequestTimeout: function getRequestTimeout(_ref3) {
+    var config = _ref3.config;
     return config.getTransactionTimeout();
   },
   isAuthSupported: function isAuthSupported() {
     return true;
   },
-  getAuthToken: function getAuthToken(_ref3) {
-    var tokenManager = _ref3.tokenManager;
-    return tokenManager.getToken('member');
-  },
   prepareParams: function prepareParams(_modules, params) {
-    var _params$include4, _params$page, _params$page3, _params$limit;
+    var _params$include4, _params$page, _params$page3;
 
     var queryParams = {};
 
-    if (params === null || params === void 0 ? void 0 : params.include) {
-      var _params$include, _params$include2, _params$include$UUIDF, _params$include3;
+    if (params !== null && params !== void 0 && params.include) {
+      var _params$include, _params$include2, _params$include3;
 
       queryParams.include = [];
 
-      if ((_params$include = params.include) === null || _params$include === void 0 ? void 0 : _params$include.customFields) {
+      if ((_params$include = params.include) !== null && _params$include !== void 0 && _params$include.customFields) {
         queryParams.include.push('custom');
       }
 
-      if ((_params$include2 = params.include) === null || _params$include2 === void 0 ? void 0 : _params$include2.customUUIDFields) {
+      if ((_params$include2 = params.include) !== null && _params$include2 !== void 0 && _params$include2.customUUIDFields) {
         queryParams.include.push('uuid.custom');
       }
 
-      if ((_params$include$UUIDF = (_params$include3 = params.include) === null || _params$include3 === void 0 ? void 0 : _params$include3.UUIDFields) !== null && _params$include$UUIDF !== void 0 ? _params$include$UUIDF : true) {
+      if ((_params$include3 = params.include) !== null && _params$include3 !== void 0 && _params$include3.UUIDFields) {
         queryParams.include.push('uuid');
       }
 
       queryParams.include = queryParams.include.join(',');
     }
 
-    if (params === null || params === void 0 ? void 0 : (_params$include4 = params.include) === null || _params$include4 === void 0 ? void 0 : _params$include4.totalCount) {
-      var _params$include5;
-
-      queryParams.count = (_params$include5 = params.include) === null || _params$include5 === void 0 ? void 0 : _params$include5.totalCount;
+    if (params !== null && params !== void 0 && (_params$include4 = params.include) !== null && _params$include4 !== void 0 && _params$include4.totalCount) {
+      queryParams.count = true;
     }
 
-    if (params === null || params === void 0 ? void 0 : (_params$page = params.page) === null || _params$page === void 0 ? void 0 : _params$page.next) {
+    if (params !== null && params !== void 0 && (_params$page = params.page) !== null && _params$page !== void 0 && _params$page.next) {
       var _params$page2;
 
       queryParams.start = (_params$page2 = params.page) === null || _params$page2 === void 0 ? void 0 : _params$page2.next;
     }
 
-    if (params === null || params === void 0 ? void 0 : (_params$page3 = params.page) === null || _params$page3 === void 0 ? void 0 : _params$page3.prev) {
+    if (params !== null && params !== void 0 && (_params$page3 = params.page) !== null && _params$page3 !== void 0 && _params$page3.prev) {
       var _params$page4;
 
       queryParams.end = (_params$page4 = params.page) === null || _params$page4 === void 0 ? void 0 : _params$page4.prev;
     }
 
-    if (params === null || params === void 0 ? void 0 : params.filter) {
+    if (params !== null && params !== void 0 && params.filter) {
       queryParams.filter = params.filter;
     }
 
-    queryParams.limit = (_params$limit = params === null || params === void 0 ? void 0 : params.limit) !== null && _params$limit !== void 0 ? _params$limit : 100;
+    if (params !== null && params !== void 0 && params.limit) {
+      queryParams.limit = params.limit;
+    }
 
-    if (params === null || params === void 0 ? void 0 : params.sort) {
+    if (params !== null && params !== void 0 && params.sort) {
       var _params$sort;
 
       queryParams.sort = Object.entries((_params$sort = params.sort) !== null && _params$sort !== void 0 ? _params$sort : {}).map(function (_ref4) {
@@ -9858,120 +9799,84 @@ exports["default"] = void 0;
 
 var _slicedToArray2 = _interopRequireDefault(__webpack_require__(9));
 
-var _defineProperty2 = _interopRequireDefault(__webpack_require__(4));
-
 var _operations = _interopRequireDefault(__webpack_require__(1));
 
 var _utils = _interopRequireDefault(__webpack_require__(3));
 
 var endpoint = {
   getOperation: function getOperation() {
-    return _operations["default"].PNSetMembersOperation;
+    return _operations["default"].PNGetMembershipsOperation;
   },
-  validateParams: function validateParams(_, params) {
-    if (!(params === null || params === void 0 ? void 0 : params.channel)) {
-      return 'Channel cannot be empty';
-    }
+  validateParams: function validateParams() {},
+  getURL: function getURL(_ref, params) {
+    var _params$uuid;
 
-    if (!(params === null || params === void 0 ? void 0 : params.uuids) || (params === null || params === void 0 ? void 0 : params.uuids.length) === 0) {
-      return 'UUIDs cannot be empty';
-    }
-  },
-  usePatch: function usePatch() {
-    return true;
-  },
-  patchURL: function patchURL(_ref, params) {
     var config = _ref.config;
-    return "/v2/objects/".concat(config.subscribeKey, "/channels/").concat(_utils["default"].encodeString(params.channel), "/uuids");
+    return "/v2/objects/".concat(config.subscribeKey, "/uuids/").concat(_utils["default"].encodeString((_params$uuid = params === null || params === void 0 ? void 0 : params.uuid) !== null && _params$uuid !== void 0 ? _params$uuid : config.getUUID()), "/channels");
   },
-  patchPayload: function patchPayload(_, params) {
-    return (0, _defineProperty2["default"])({
-      set: [],
-      remove: []
-    }, params.type, params.uuids.map(function (uuid) {
-      if (typeof uuid === 'string') {
-        return {
-          uuid: {
-            id: uuid
-          }
-        };
-      } else {
-        return {
-          uuid: {
-            id: uuid.id
-          },
-          custom: uuid.custom
-        };
-      }
-    }));
-  },
-  getRequestTimeout: function getRequestTimeout(_ref3) {
-    var config = _ref3.config;
+  getRequestTimeout: function getRequestTimeout(_ref2) {
+    var config = _ref2.config;
     return config.getTransactionTimeout();
   },
   isAuthSupported: function isAuthSupported() {
     return true;
   },
-  getAuthToken: function getAuthToken(_ref4) {
-    var tokenManager = _ref4.tokenManager;
-    return tokenManager.getToken('member');
-  },
   prepareParams: function prepareParams(_modules, params) {
-    var _params$include4, _params$page, _params$page3;
+    var _params$include4, _params$page, _params$page3, _params$limit;
 
     var queryParams = {};
 
-    if (params === null || params === void 0 ? void 0 : params.include) {
+    if (params !== null && params !== void 0 && params.include) {
       var _params$include, _params$include2, _params$include3;
 
       queryParams.include = [];
 
-      if ((_params$include = params.include) === null || _params$include === void 0 ? void 0 : _params$include.customFields) {
+      if ((_params$include = params.include) !== null && _params$include !== void 0 && _params$include.customFields) {
         queryParams.include.push('custom');
       }
 
-      if ((_params$include2 = params.include) === null || _params$include2 === void 0 ? void 0 : _params$include2.customUUIDFields) {
-        queryParams.include.push('uuid.custom');
+      if ((_params$include2 = params.include) !== null && _params$include2 !== void 0 && _params$include2.customChannelFields) {
+        queryParams.include.push('channel.custom');
       }
 
-      if ((_params$include3 = params.include) === null || _params$include3 === void 0 ? void 0 : _params$include3.UUIDFields) {
-        queryParams.include.push('uuid');
+      if ((_params$include3 = params.include) !== null && _params$include3 !== void 0 && _params$include3.channelFields) {
+        queryParams.include.push('channel');
       }
 
       queryParams.include = queryParams.include.join(',');
     }
 
-    if (params === null || params === void 0 ? void 0 : (_params$include4 = params.include) === null || _params$include4 === void 0 ? void 0 : _params$include4.totalCount) {
-      queryParams.count = true;
+    if (params !== null && params !== void 0 && (_params$include4 = params.include) !== null && _params$include4 !== void 0 && _params$include4.totalCount) {
+      var _params$include5;
+
+      queryParams.count = (_params$include5 = params.include) === null || _params$include5 === void 0 ? void 0 : _params$include5.totalCount;
     }
 
-    if (params === null || params === void 0 ? void 0 : (_params$page = params.page) === null || _params$page === void 0 ? void 0 : _params$page.next) {
+    if (params !== null && params !== void 0 && (_params$page = params.page) !== null && _params$page !== void 0 && _params$page.next) {
       var _params$page2;
 
       queryParams.start = (_params$page2 = params.page) === null || _params$page2 === void 0 ? void 0 : _params$page2.next;
     }
 
-    if (params === null || params === void 0 ? void 0 : (_params$page3 = params.page) === null || _params$page3 === void 0 ? void 0 : _params$page3.prev) {
+    if (params !== null && params !== void 0 && (_params$page3 = params.page) !== null && _params$page3 !== void 0 && _params$page3.prev) {
       var _params$page4;
 
       queryParams.end = (_params$page4 = params.page) === null || _params$page4 === void 0 ? void 0 : _params$page4.prev;
     }
 
-    if (params === null || params === void 0 ? void 0 : params.filter) {
+    if (params !== null && params !== void 0 && params.filter) {
       queryParams.filter = params.filter;
     }
 
-    if (params === null || params === void 0 ? void 0 : params.limit) {
-      queryParams.limit = params.limit;
-    }
+    queryParams.limit = (_params$limit = params === null || params === void 0 ? void 0 : params.limit) !== null && _params$limit !== void 0 ? _params$limit : 100;
 
-    if (params === null || params === void 0 ? void 0 : params.sort) {
+    if (params !== null && params !== void 0 && params.sort) {
       var _params$sort;
 
-      queryParams.sort = Object.entries((_params$sort = params.sort) !== null && _params$sort !== void 0 ? _params$sort : {}).map(function (_ref5) {
-        var _ref6 = (0, _slicedToArray2["default"])(_ref5, 2),
-            key = _ref6[0],
-            value = _ref6[1];
+      queryParams.sort = Object.entries((_params$sort = params.sort) !== null && _params$sort !== void 0 ? _params$sort : {}).map(function (_ref3) {
+        var _ref4 = (0, _slicedToArray2["default"])(_ref3, 2),
+            key = _ref4[0],
+            value = _ref4[1];
 
         if (value === 'asc' || value === 'desc') {
           return "".concat(key, ":").concat(value);
@@ -10013,82 +9918,108 @@ exports["default"] = void 0;
 
 var _slicedToArray2 = _interopRequireDefault(__webpack_require__(9));
 
+var _defineProperty2 = _interopRequireDefault(__webpack_require__(4));
+
 var _operations = _interopRequireDefault(__webpack_require__(1));
 
 var _utils = _interopRequireDefault(__webpack_require__(3));
 
 var endpoint = {
   getOperation: function getOperation() {
-    return _operations["default"].PNGetMembershipsOperation;
+    return _operations["default"].PNSetMembershipsOperation;
   },
-  validateParams: function validateParams() {},
-  getURL: function getURL(_ref, params) {
+  validateParams: function validateParams(_, params) {
+    if (!(params !== null && params !== void 0 && params.channels) || (params === null || params === void 0 ? void 0 : params.channels.length) === 0) {
+      return 'Channels cannot be empty';
+    }
+  },
+  usePatch: function usePatch() {
+    return true;
+  },
+  patchURL: function patchURL(_ref, params) {
     var _params$uuid;
 
     var config = _ref.config;
-    return "/v2/objects/".concat(config.subscribeKey, "/uuids/").concat(_utils["default"].encodeString((_params$uuid = params === null || params === void 0 ? void 0 : params.uuid) !== null && _params$uuid !== void 0 ? _params$uuid : config.getUUID()), "/channels");
+    return "/v2/objects/".concat(config.subscribeKey, "/uuids/").concat(_utils["default"].encodeString((_params$uuid = params.uuid) !== null && _params$uuid !== void 0 ? _params$uuid : config.getUUID()), "/channels");
   },
-  getRequestTimeout: function getRequestTimeout(_ref2) {
-    var config = _ref2.config;
+  patchPayload: function patchPayload(_, params) {
+    return (0, _defineProperty2["default"])({
+      set: [],
+      remove: []
+    }, params.type, params.channels.map(function (channel) {
+      if (typeof channel === 'string') {
+        return {
+          channel: {
+            id: channel
+          }
+        };
+      } else {
+        return {
+          channel: {
+            id: channel.id
+          },
+          custom: channel.custom
+        };
+      }
+    }));
+  },
+  getRequestTimeout: function getRequestTimeout(_ref3) {
+    var config = _ref3.config;
     return config.getTransactionTimeout();
   },
   isAuthSupported: function isAuthSupported() {
     return true;
   },
-  getAuthToken: function getAuthToken(_ref3) {
-    var tokenManager = _ref3.tokenManager;
-    return tokenManager.getToken('membership');
-  },
   prepareParams: function prepareParams(_modules, params) {
-    var _params$include4, _params$page, _params$page3, _params$limit;
+    var _params$include4, _params$page, _params$page3;
 
     var queryParams = {};
 
-    if (params === null || params === void 0 ? void 0 : params.include) {
+    if (params !== null && params !== void 0 && params.include) {
       var _params$include, _params$include2, _params$include3;
 
       queryParams.include = [];
 
-      if ((_params$include = params.include) === null || _params$include === void 0 ? void 0 : _params$include.customFields) {
+      if ((_params$include = params.include) !== null && _params$include !== void 0 && _params$include.customFields) {
         queryParams.include.push('custom');
       }
 
-      if ((_params$include2 = params.include) === null || _params$include2 === void 0 ? void 0 : _params$include2.customChannelFields) {
+      if ((_params$include2 = params.include) !== null && _params$include2 !== void 0 && _params$include2.customChannelFields) {
         queryParams.include.push('channel.custom');
       }
 
-      if ((_params$include3 = params.include) === null || _params$include3 === void 0 ? void 0 : _params$include3.channelFields) {
+      if ((_params$include3 = params.include) !== null && _params$include3 !== void 0 && _params$include3.channelFields) {
         queryParams.include.push('channel');
       }
 
       queryParams.include = queryParams.include.join(',');
     }
 
-    if (params === null || params === void 0 ? void 0 : (_params$include4 = params.include) === null || _params$include4 === void 0 ? void 0 : _params$include4.totalCount) {
-      var _params$include5;
-
-      queryParams.count = (_params$include5 = params.include) === null || _params$include5 === void 0 ? void 0 : _params$include5.totalCount;
+    if (params !== null && params !== void 0 && (_params$include4 = params.include) !== null && _params$include4 !== void 0 && _params$include4.totalCount) {
+      queryParams.count = true;
     }
 
-    if (params === null || params === void 0 ? void 0 : (_params$page = params.page) === null || _params$page === void 0 ? void 0 : _params$page.next) {
+    if (params !== null && params !== void 0 && (_params$page = params.page) !== null && _params$page !== void 0 && _params$page.next) {
       var _params$page2;
 
       queryParams.start = (_params$page2 = params.page) === null || _params$page2 === void 0 ? void 0 : _params$page2.next;
     }
 
-    if (params === null || params === void 0 ? void 0 : (_params$page3 = params.page) === null || _params$page3 === void 0 ? void 0 : _params$page3.prev) {
+    if (params !== null && params !== void 0 && (_params$page3 = params.page) !== null && _params$page3 !== void 0 && _params$page3.prev) {
       var _params$page4;
 
       queryParams.end = (_params$page4 = params.page) === null || _params$page4 === void 0 ? void 0 : _params$page4.prev;
     }
 
-    if (params === null || params === void 0 ? void 0 : params.filter) {
+    if (params !== null && params !== void 0 && params.filter) {
       queryParams.filter = params.filter;
     }
 
-    queryParams.limit = (_params$limit = params === null || params === void 0 ? void 0 : params.limit) !== null && _params$limit !== void 0 ? _params$limit : 100;
+    if (params !== null && params !== void 0 && params.limit) {
+      queryParams.limit = params.limit;
+    }
 
-    if (params === null || params === void 0 ? void 0 : params.sort) {
+    if (params !== null && params !== void 0 && params.sort) {
       var _params$sort;
 
       queryParams.sort = Object.entries((_params$sort = params.sort) !== null && _params$sort !== void 0 ? _params$sort : {}).map(function (_ref4) {
@@ -10132,170 +10063,16 @@ var _interopRequireDefault = __webpack_require__(0);
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports["default"] = void 0;
-
-var _slicedToArray2 = _interopRequireDefault(__webpack_require__(9));
-
-var _defineProperty2 = _interopRequireDefault(__webpack_require__(4));
-
-var _operations = _interopRequireDefault(__webpack_require__(1));
-
-var _utils = _interopRequireDefault(__webpack_require__(3));
-
-var endpoint = {
-  getOperation: function getOperation() {
-    return _operations["default"].PNSetMembershipsOperation;
-  },
-  validateParams: function validateParams(_, params) {
-    if (!(params === null || params === void 0 ? void 0 : params.channels) || (params === null || params === void 0 ? void 0 : params.channels.length) === 0) {
-      return 'Channels cannot be empty';
-    }
-  },
-  usePatch: function usePatch() {
-    return true;
-  },
-  patchURL: function patchURL(_ref, params) {
-    var _params$uuid;
-
-    var config = _ref.config;
-    return "/v2/objects/".concat(config.subscribeKey, "/uuids/").concat(_utils["default"].encodeString((_params$uuid = params.uuid) !== null && _params$uuid !== void 0 ? _params$uuid : config.getUUID()), "/channels");
-  },
-  patchPayload: function patchPayload(_, params) {
-    return (0, _defineProperty2["default"])({
-      set: [],
-      remove: []
-    }, params.type, params.channels.map(function (channel) {
-      if (typeof channel === 'string') {
-        return {
-          channel: {
-            id: channel
-          }
-        };
-      } else {
-        return {
-          channel: {
-            id: channel.id
-          },
-          custom: channel.custom
-        };
-      }
-    }));
-  },
-  getRequestTimeout: function getRequestTimeout(_ref3) {
-    var config = _ref3.config;
-    return config.getTransactionTimeout();
-  },
-  isAuthSupported: function isAuthSupported() {
-    return true;
-  },
-  getAuthToken: function getAuthToken(_ref4) {
-    var tokenManager = _ref4.tokenManager;
-    return tokenManager.getToken('membership');
-  },
-  prepareParams: function prepareParams(_modules, params) {
-    var _params$include4, _params$page, _params$page3;
-
-    var queryParams = {};
-
-    if (params === null || params === void 0 ? void 0 : params.include) {
-      var _params$include, _params$include2, _params$include3;
-
-      queryParams.include = [];
-
-      if ((_params$include = params.include) === null || _params$include === void 0 ? void 0 : _params$include.customFields) {
-        queryParams.include.push('custom');
-      }
-
-      if ((_params$include2 = params.include) === null || _params$include2 === void 0 ? void 0 : _params$include2.customChannelFields) {
-        queryParams.include.push('channel.custom');
-      }
-
-      if ((_params$include3 = params.include) === null || _params$include3 === void 0 ? void 0 : _params$include3.channelFields) {
-        queryParams.include.push('channel');
-      }
-
-      queryParams.include = queryParams.include.join(',');
-    }
-
-    if (params === null || params === void 0 ? void 0 : (_params$include4 = params.include) === null || _params$include4 === void 0 ? void 0 : _params$include4.totalCount) {
-      queryParams.count = true;
-    }
-
-    if (params === null || params === void 0 ? void 0 : (_params$page = params.page) === null || _params$page === void 0 ? void 0 : _params$page.next) {
-      var _params$page2;
-
-      queryParams.start = (_params$page2 = params.page) === null || _params$page2 === void 0 ? void 0 : _params$page2.next;
-    }
-
-    if (params === null || params === void 0 ? void 0 : (_params$page3 = params.page) === null || _params$page3 === void 0 ? void 0 : _params$page3.prev) {
-      var _params$page4;
-
-      queryParams.end = (_params$page4 = params.page) === null || _params$page4 === void 0 ? void 0 : _params$page4.prev;
-    }
-
-    if (params === null || params === void 0 ? void 0 : params.filter) {
-      queryParams.filter = params.filter;
-    }
-
-    if (params === null || params === void 0 ? void 0 : params.limit) {
-      queryParams.limit = params.limit;
-    }
-
-    if (params === null || params === void 0 ? void 0 : params.sort) {
-      var _params$sort;
-
-      queryParams.sort = Object.entries((_params$sort = params.sort) !== null && _params$sort !== void 0 ? _params$sort : {}).map(function (_ref5) {
-        var _ref6 = (0, _slicedToArray2["default"])(_ref5, 2),
-            key = _ref6[0],
-            value = _ref6[1];
-
-        if (value === 'asc' || value === 'desc') {
-          return "".concat(key, ":").concat(value);
-        } else {
-          return key;
-        }
-      });
-    }
-
-    return queryParams;
-  },
-  handleResponse: function handleResponse(_, response) {
-    return {
-      status: response.status,
-      data: response.data,
-      totalCount: response.totalCount,
-      prev: response.prev,
-      next: response.next
-    };
-  }
-};
-var _default = endpoint;
-exports["default"] = _default;
-module.exports = exports.default;
-
-/***/ }),
-/* 86 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-var _interopRequireDefault = __webpack_require__(0);
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
 exports.getOperation = getOperation;
-exports.validateParams = validateParams;
-exports.usePost = usePost;
-exports.getURL = getURL;
-exports.postURL = postURL;
 exports.getRequestTimeout = getRequestTimeout;
-exports.isAuthSupported = isAuthSupported;
-exports.getAuthToken = getAuthToken;
-exports.prepareParams = prepareParams;
-exports.postPayload = postPayload;
+exports.getURL = getURL;
 exports.handleResponse = handleResponse;
+exports.isAuthSupported = isAuthSupported;
+exports.postPayload = postPayload;
+exports.postURL = postURL;
+exports.prepareParams = prepareParams;
+exports.usePost = usePost;
+exports.validateParams = validateParams;
 
 var _flow_interfaces = __webpack_require__(2);
 
@@ -10350,11 +10127,6 @@ function isAuthSupported() {
   return true;
 }
 
-function getAuthToken(modules, incomingParams) {
-  var token = modules.tokenManager.getToken('user', incomingParams.id) || modules.tokenManager.getToken('user');
-  return token;
-}
-
 function prepareParams(modules, incomingParams) {
   var include = incomingParams.include;
   var params = {};
@@ -10393,7 +10165,7 @@ function handleResponse(modules, usersResponse) {
 }
 
 /***/ }),
-/* 87 */
+/* 86 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -10405,16 +10177,15 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.getOperation = getOperation;
-exports.validateParams = validateParams;
-exports.usePatch = usePatch;
-exports.getURL = getURL;
-exports.patchURL = patchURL;
 exports.getRequestTimeout = getRequestTimeout;
-exports.isAuthSupported = isAuthSupported;
-exports.getAuthToken = getAuthToken;
-exports.prepareParams = prepareParams;
-exports.patchPayload = patchPayload;
+exports.getURL = getURL;
 exports.handleResponse = handleResponse;
+exports.isAuthSupported = isAuthSupported;
+exports.patchPayload = patchPayload;
+exports.patchURL = patchURL;
+exports.prepareParams = prepareParams;
+exports.usePatch = usePatch;
+exports.validateParams = validateParams;
 
 var _flow_interfaces = __webpack_require__(2);
 
@@ -10473,11 +10244,6 @@ function isAuthSupported() {
   return true;
 }
 
-function getAuthToken(modules, incomingParams) {
-  var token = modules.tokenManager.getToken('user', incomingParams.id) || modules.tokenManager.getToken('user');
-  return token;
-}
-
 function prepareParams(modules, incomingParams) {
   var include = incomingParams.include;
   var params = {};
@@ -10516,7 +10282,7 @@ function handleResponse(modules, usersResponse) {
 }
 
 /***/ }),
-/* 88 */
+/* 87 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -10528,14 +10294,13 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.getOperation = getOperation;
-exports.validateParams = validateParams;
-exports.useDelete = useDelete;
-exports.getURL = getURL;
 exports.getRequestTimeout = getRequestTimeout;
-exports.isAuthSupported = isAuthSupported;
-exports.getAuthToken = getAuthToken;
-exports.prepareParams = prepareParams;
+exports.getURL = getURL;
 exports.handleResponse = handleResponse;
+exports.isAuthSupported = isAuthSupported;
+exports.prepareParams = prepareParams;
+exports.useDelete = useDelete;
+exports.validateParams = validateParams;
 
 var _flow_interfaces = __webpack_require__(2);
 
@@ -10571,11 +10336,6 @@ function isAuthSupported() {
   return true;
 }
 
-function getAuthToken(modules, userId) {
-  var token = modules.tokenManager.getToken('user', userId) || modules.tokenManager.getToken('user');
-  return token;
-}
-
 function prepareParams() {
   return {};
 }
@@ -10585,7 +10345,7 @@ function handleResponse(modules, usersResponse) {
 }
 
 /***/ }),
-/* 89 */
+/* 88 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -10597,13 +10357,12 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.getOperation = getOperation;
-exports.validateParams = validateParams;
-exports.getURL = getURL;
 exports.getRequestTimeout = getRequestTimeout;
-exports.isAuthSupported = isAuthSupported;
-exports.getAuthToken = getAuthToken;
-exports.prepareParams = prepareParams;
+exports.getURL = getURL;
 exports.handleResponse = handleResponse;
+exports.isAuthSupported = isAuthSupported;
+exports.prepareParams = prepareParams;
+exports.validateParams = validateParams;
 
 var _flow_interfaces = __webpack_require__(2);
 
@@ -10632,11 +10391,6 @@ function getRequestTimeout(_ref) {
 
 function isAuthSupported() {
   return true;
-}
-
-function getAuthToken(modules, incomingParams) {
-  var token = modules.tokenManager.getToken('user', incomingParams.userId) || modules.tokenManager.getToken('user');
-  return token;
 }
 
 function prepareParams(modules, incomingParams) {
@@ -10673,7 +10427,7 @@ function handleResponse(modules, usersResponse) {
 }
 
 /***/ }),
-/* 90 */
+/* 89 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -10685,13 +10439,12 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.getOperation = getOperation;
-exports.validateParams = validateParams;
-exports.getURL = getURL;
 exports.getRequestTimeout = getRequestTimeout;
-exports.isAuthSupported = isAuthSupported;
-exports.getAuthToken = getAuthToken;
-exports.prepareParams = prepareParams;
+exports.getURL = getURL;
 exports.handleResponse = handleResponse;
+exports.isAuthSupported = isAuthSupported;
+exports.prepareParams = prepareParams;
+exports.validateParams = validateParams;
 
 var _flow_interfaces = __webpack_require__(2);
 
@@ -10715,11 +10468,6 @@ function getRequestTimeout(_ref) {
 
 function isAuthSupported() {
   return true;
-}
-
-function getAuthToken(modules) {
-  var token = modules.tokenManager.getToken('user');
-  return token;
 }
 
 function prepareParams(modules, incomingParams) {
@@ -10773,7 +10521,7 @@ function handleResponse(modules, usersResponse) {
 }
 
 /***/ }),
-/* 91 */
+/* 90 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -10785,16 +10533,15 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.getOperation = getOperation;
-exports.validateParams = validateParams;
-exports.usePost = usePost;
-exports.getURL = getURL;
-exports.postURL = postURL;
 exports.getRequestTimeout = getRequestTimeout;
-exports.isAuthSupported = isAuthSupported;
-exports.getAuthToken = getAuthToken;
-exports.prepareParams = prepareParams;
-exports.postPayload = postPayload;
+exports.getURL = getURL;
 exports.handleResponse = handleResponse;
+exports.isAuthSupported = isAuthSupported;
+exports.postPayload = postPayload;
+exports.postURL = postURL;
+exports.prepareParams = prepareParams;
+exports.usePost = usePost;
+exports.validateParams = validateParams;
 
 var _flow_interfaces = __webpack_require__(2);
 
@@ -10849,11 +10596,6 @@ function isAuthSupported() {
   return true;
 }
 
-function getAuthToken(modules, incomingParams) {
-  var token = modules.tokenManager.getToken('space', incomingParams.id) || modules.tokenManager.getToken('space');
-  return token;
-}
-
 function prepareParams(modules, incomingParams) {
   var include = incomingParams.include;
   var params = {};
@@ -10892,7 +10634,7 @@ function handleResponse(modules, spacesResponse) {
 }
 
 /***/ }),
-/* 92 */
+/* 91 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -10904,16 +10646,15 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.getOperation = getOperation;
-exports.validateParams = validateParams;
-exports.usePatch = usePatch;
-exports.getURL = getURL;
-exports.patchURL = patchURL;
 exports.getRequestTimeout = getRequestTimeout;
-exports.isAuthSupported = isAuthSupported;
-exports.getAuthToken = getAuthToken;
-exports.prepareParams = prepareParams;
-exports.patchPayload = patchPayload;
+exports.getURL = getURL;
 exports.handleResponse = handleResponse;
+exports.isAuthSupported = isAuthSupported;
+exports.patchPayload = patchPayload;
+exports.patchURL = patchURL;
+exports.prepareParams = prepareParams;
+exports.usePatch = usePatch;
+exports.validateParams = validateParams;
 
 var _flow_interfaces = __webpack_require__(2);
 
@@ -10972,11 +10713,6 @@ function isAuthSupported() {
   return true;
 }
 
-function getAuthToken(modules, incomingParams) {
-  var token = modules.tokenManager.getToken('space', incomingParams.id) || modules.tokenManager.getToken('space');
-  return token;
-}
-
 function prepareParams(modules, incomingParams) {
   var include = incomingParams.include;
   var params = {};
@@ -11015,7 +10751,7 @@ function handleResponse(modules, spacesResponse) {
 }
 
 /***/ }),
-/* 93 */
+/* 92 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -11027,14 +10763,13 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.getOperation = getOperation;
-exports.validateParams = validateParams;
-exports.useDelete = useDelete;
-exports.getURL = getURL;
 exports.getRequestTimeout = getRequestTimeout;
-exports.isAuthSupported = isAuthSupported;
-exports.getAuthToken = getAuthToken;
-exports.prepareParams = prepareParams;
+exports.getURL = getURL;
 exports.handleResponse = handleResponse;
+exports.isAuthSupported = isAuthSupported;
+exports.prepareParams = prepareParams;
+exports.useDelete = useDelete;
+exports.validateParams = validateParams;
 
 var _flow_interfaces = __webpack_require__(2);
 
@@ -11070,11 +10805,6 @@ function isAuthSupported() {
   return true;
 }
 
-function getAuthToken(modules, spaceId) {
-  var token = modules.tokenManager.getToken('space', spaceId) || modules.tokenManager.getToken('space');
-  return token;
-}
-
 function prepareParams() {
   return {};
 }
@@ -11084,7 +10814,7 @@ function handleResponse(modules, spacesResponse) {
 }
 
 /***/ }),
-/* 94 */
+/* 93 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -11096,13 +10826,12 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.getOperation = getOperation;
-exports.validateParams = validateParams;
-exports.getURL = getURL;
 exports.getRequestTimeout = getRequestTimeout;
-exports.isAuthSupported = isAuthSupported;
-exports.getAuthToken = getAuthToken;
-exports.prepareParams = prepareParams;
+exports.getURL = getURL;
 exports.handleResponse = handleResponse;
+exports.isAuthSupported = isAuthSupported;
+exports.prepareParams = prepareParams;
+exports.validateParams = validateParams;
 
 var _flow_interfaces = __webpack_require__(2);
 
@@ -11126,11 +10855,6 @@ function getRequestTimeout(_ref) {
 
 function isAuthSupported() {
   return true;
-}
-
-function getAuthToken(modules) {
-  var token = modules.tokenManager.getToken('space');
-  return token;
 }
 
 function prepareParams(modules, incomingParams) {
@@ -11184,7 +10908,7 @@ function handleResponse(modules, spacesResponse) {
 }
 
 /***/ }),
-/* 95 */
+/* 94 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -11196,13 +10920,12 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.getOperation = getOperation;
-exports.validateParams = validateParams;
-exports.getURL = getURL;
 exports.getRequestTimeout = getRequestTimeout;
-exports.isAuthSupported = isAuthSupported;
-exports.getAuthToken = getAuthToken;
-exports.prepareParams = prepareParams;
+exports.getURL = getURL;
 exports.handleResponse = handleResponse;
+exports.isAuthSupported = isAuthSupported;
+exports.prepareParams = prepareParams;
+exports.validateParams = validateParams;
 
 var _flow_interfaces = __webpack_require__(2);
 
@@ -11231,11 +10954,6 @@ function getRequestTimeout(_ref) {
 
 function isAuthSupported() {
   return true;
-}
-
-function getAuthToken(modules, incomingParams) {
-  var token = modules.tokenManager.getToken('space', incomingParams.spaceId) || modules.tokenManager.getToken('space');
-  return token;
 }
 
 function prepareParams(modules, incomingParams) {
@@ -11272,7 +10990,7 @@ function handleResponse(modules, spacesResponse) {
 }
 
 /***/ }),
-/* 96 */
+/* 95 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -11284,13 +11002,12 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.getOperation = getOperation;
-exports.validateParams = validateParams;
-exports.getURL = getURL;
 exports.getRequestTimeout = getRequestTimeout;
-exports.isAuthSupported = isAuthSupported;
-exports.getAuthToken = getAuthToken;
-exports.prepareParams = prepareParams;
+exports.getURL = getURL;
 exports.handleResponse = handleResponse;
+exports.isAuthSupported = isAuthSupported;
+exports.prepareParams = prepareParams;
+exports.validateParams = validateParams;
 
 var _flow_interfaces = __webpack_require__(2);
 
@@ -11319,11 +11036,6 @@ function getRequestTimeout(_ref) {
 
 function isAuthSupported() {
   return true;
-}
-
-function getAuthToken(modules, incomingParams) {
-  var token = modules.tokenManager.getToken('space', incomingParams.spaceId) || modules.tokenManager.getToken('space');
-  return token;
 }
 
 function prepareParams(modules, incomingParams) {
@@ -11385,7 +11097,7 @@ function handleResponse(modules, membersResponse) {
 }
 
 /***/ }),
-/* 97 */
+/* 96 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -11397,16 +11109,15 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.getOperation = getOperation;
-exports.validateParams = validateParams;
-exports.getURL = getURL;
-exports.patchURL = patchURL;
-exports.usePatch = usePatch;
 exports.getRequestTimeout = getRequestTimeout;
-exports.isAuthSupported = isAuthSupported;
-exports.getAuthToken = getAuthToken;
-exports.prepareParams = prepareParams;
-exports.patchPayload = patchPayload;
+exports.getURL = getURL;
 exports.handleResponse = handleResponse;
+exports.isAuthSupported = isAuthSupported;
+exports.patchPayload = patchPayload;
+exports.patchURL = patchURL;
+exports.prepareParams = prepareParams;
+exports.usePatch = usePatch;
+exports.validateParams = validateParams;
 
 var _flow_interfaces = __webpack_require__(2);
 
@@ -11470,11 +11181,6 @@ function isAuthSupported() {
   return true;
 }
 
-function getAuthToken(modules, incomingParams) {
-  var token = modules.tokenManager.getToken('space', incomingParams.spaceId) || modules.tokenManager.getToken('space');
-  return token;
-}
-
 function prepareParams(modules, incomingParams) {
   var include = incomingParams.include,
       limit = incomingParams.limit,
@@ -11533,7 +11239,7 @@ function handleResponse(modules, membersResponse) {
 }
 
 /***/ }),
-/* 98 */
+/* 97 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -11545,16 +11251,15 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.getOperation = getOperation;
-exports.validateParams = validateParams;
-exports.getURL = getURL;
-exports.patchURL = patchURL;
-exports.usePatch = usePatch;
 exports.getRequestTimeout = getRequestTimeout;
-exports.isAuthSupported = isAuthSupported;
-exports.getAuthToken = getAuthToken;
-exports.prepareParams = prepareParams;
-exports.patchPayload = patchPayload;
+exports.getURL = getURL;
 exports.handleResponse = handleResponse;
+exports.isAuthSupported = isAuthSupported;
+exports.patchPayload = patchPayload;
+exports.patchURL = patchURL;
+exports.prepareParams = prepareParams;
+exports.usePatch = usePatch;
+exports.validateParams = validateParams;
 
 var _flow_interfaces = __webpack_require__(2);
 
@@ -11660,9 +11365,140 @@ function isAuthSupported() {
   return true;
 }
 
-function getAuthToken(modules, incomingParams) {
-  var token = modules.tokenManager.getToken('space', incomingParams.spaceId) || modules.tokenManager.getToken('space');
-  return token;
+function prepareParams(modules, incomingParams) {
+  var include = incomingParams.include,
+      limit = incomingParams.limit,
+      page = incomingParams.page;
+  var params = {};
+
+  if (limit) {
+    params.limit = limit;
+  }
+
+  if (include) {
+    var includes = [];
+
+    if (include.totalCount) {
+      params.count = true;
+    }
+
+    if (include.customFields) {
+      includes.push('custom');
+    }
+
+    if (include.spaceFields) {
+      includes.push('space');
+    }
+
+    if (include.customSpaceFields) {
+      includes.push('space.custom');
+    }
+
+    var includesString = includes.join(',');
+
+    if (includesString.length > 0) {
+      params.include = includesString;
+    }
+  }
+
+  if (page) {
+    if (page.next) {
+      params.start = page.next;
+    }
+
+    if (page.prev) {
+      params.end = page.prev;
+    }
+  }
+
+  return params;
+}
+
+function patchPayload(modules, incomingParams) {
+  return prepareMessagePayload(modules, incomingParams);
+}
+
+function handleResponse(modules, membersResponse) {
+  return membersResponse;
+}
+
+/***/ }),
+/* 98 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var _interopRequireDefault = __webpack_require__(0);
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.getOperation = getOperation;
+exports.getRequestTimeout = getRequestTimeout;
+exports.getURL = getURL;
+exports.handleResponse = handleResponse;
+exports.isAuthSupported = isAuthSupported;
+exports.patchPayload = patchPayload;
+exports.patchURL = patchURL;
+exports.prepareParams = prepareParams;
+exports.usePatch = usePatch;
+exports.validateParams = validateParams;
+
+var _flow_interfaces = __webpack_require__(2);
+
+var _operations = _interopRequireDefault(__webpack_require__(1));
+
+var _utils = _interopRequireDefault(__webpack_require__(3));
+
+function prepareMessagePayload(modules, incomingParams) {
+  var users = incomingParams.users;
+  var payload = {};
+
+  if (users && users.length > 0) {
+    payload.remove = [];
+    users.forEach(function (removeMemberId) {
+      payload.remove.push({
+        id: removeMemberId
+      });
+    });
+  }
+
+  return payload;
+}
+
+function getOperation() {
+  return _operations["default"].PNUpdateMembersOperation;
+}
+
+function validateParams(modules, incomingParams) {
+  var spaceId = incomingParams.spaceId,
+      users = incomingParams.users;
+  if (!spaceId) return 'Missing spaceId';
+  if (!users) return 'Missing users';
+}
+
+function getURL(modules, incomingParams) {
+  var config = modules.config;
+  return "/v1/objects/".concat(config.subscribeKey, "/spaces/").concat(_utils["default"].encodeString(incomingParams.spaceId), "/users");
+}
+
+function patchURL(modules, incomingParams) {
+  var config = modules.config;
+  return "/v1/objects/".concat(config.subscribeKey, "/spaces/").concat(_utils["default"].encodeString(incomingParams.spaceId), "/users");
+}
+
+function usePatch() {
+  return true;
+}
+
+function getRequestTimeout(_ref) {
+  var config = _ref.config;
+  return config.getTransactionTimeout();
+}
+
+function isAuthSupported() {
+  return true;
 }
 
 function prepareParams(modules, incomingParams) {
@@ -11735,155 +11571,12 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.getOperation = getOperation;
-exports.validateParams = validateParams;
-exports.getURL = getURL;
-exports.patchURL = patchURL;
-exports.usePatch = usePatch;
 exports.getRequestTimeout = getRequestTimeout;
-exports.isAuthSupported = isAuthSupported;
-exports.getAuthToken = getAuthToken;
-exports.prepareParams = prepareParams;
-exports.patchPayload = patchPayload;
-exports.handleResponse = handleResponse;
-
-var _flow_interfaces = __webpack_require__(2);
-
-var _operations = _interopRequireDefault(__webpack_require__(1));
-
-var _utils = _interopRequireDefault(__webpack_require__(3));
-
-function prepareMessagePayload(modules, incomingParams) {
-  var users = incomingParams.users;
-  var payload = {};
-
-  if (users && users.length > 0) {
-    payload.remove = [];
-    users.forEach(function (removeMemberId) {
-      payload.remove.push({
-        id: removeMemberId
-      });
-    });
-  }
-
-  return payload;
-}
-
-function getOperation() {
-  return _operations["default"].PNUpdateMembersOperation;
-}
-
-function validateParams(modules, incomingParams) {
-  var spaceId = incomingParams.spaceId,
-      users = incomingParams.users;
-  if (!spaceId) return 'Missing spaceId';
-  if (!users) return 'Missing users';
-}
-
-function getURL(modules, incomingParams) {
-  var config = modules.config;
-  return "/v1/objects/".concat(config.subscribeKey, "/spaces/").concat(_utils["default"].encodeString(incomingParams.spaceId), "/users");
-}
-
-function patchURL(modules, incomingParams) {
-  var config = modules.config;
-  return "/v1/objects/".concat(config.subscribeKey, "/spaces/").concat(_utils["default"].encodeString(incomingParams.spaceId), "/users");
-}
-
-function usePatch() {
-  return true;
-}
-
-function getRequestTimeout(_ref) {
-  var config = _ref.config;
-  return config.getTransactionTimeout();
-}
-
-function isAuthSupported() {
-  return true;
-}
-
-function getAuthToken(modules, incomingParams) {
-  var token = modules.tokenManager.getToken('space', incomingParams.spaceId) || modules.tokenManager.getToken('space');
-  return token;
-}
-
-function prepareParams(modules, incomingParams) {
-  var include = incomingParams.include,
-      limit = incomingParams.limit,
-      page = incomingParams.page;
-  var params = {};
-
-  if (limit) {
-    params.limit = limit;
-  }
-
-  if (include) {
-    var includes = [];
-
-    if (include.totalCount) {
-      params.count = true;
-    }
-
-    if (include.customFields) {
-      includes.push('custom');
-    }
-
-    if (include.spaceFields) {
-      includes.push('space');
-    }
-
-    if (include.customSpaceFields) {
-      includes.push('space.custom');
-    }
-
-    var includesString = includes.join(',');
-
-    if (includesString.length > 0) {
-      params.include = includesString;
-    }
-  }
-
-  if (page) {
-    if (page.next) {
-      params.start = page.next;
-    }
-
-    if (page.prev) {
-      params.end = page.prev;
-    }
-  }
-
-  return params;
-}
-
-function patchPayload(modules, incomingParams) {
-  return prepareMessagePayload(modules, incomingParams);
-}
-
-function handleResponse(modules, membersResponse) {
-  return membersResponse;
-}
-
-/***/ }),
-/* 100 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-var _interopRequireDefault = __webpack_require__(0);
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.getOperation = getOperation;
-exports.validateParams = validateParams;
 exports.getURL = getURL;
-exports.getRequestTimeout = getRequestTimeout;
-exports.isAuthSupported = isAuthSupported;
-exports.getAuthToken = getAuthToken;
-exports.prepareParams = prepareParams;
 exports.handleResponse = handleResponse;
+exports.isAuthSupported = isAuthSupported;
+exports.prepareParams = prepareParams;
+exports.validateParams = validateParams;
 
 var _flow_interfaces = __webpack_require__(2);
 
@@ -11912,11 +11605,6 @@ function getRequestTimeout(_ref) {
 
 function isAuthSupported() {
   return true;
-}
-
-function getAuthToken(modules, incomingParams) {
-  var token = modules.tokenManager.getToken('user', incomingParams.userId) || modules.tokenManager.getToken('user');
-  return token;
 }
 
 function prepareParams(modules, incomingParams) {
@@ -11978,7 +11666,7 @@ function handleResponse(modules, membershipsResponse) {
 }
 
 /***/ }),
-/* 101 */
+/* 100 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -11990,16 +11678,15 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.getOperation = getOperation;
-exports.validateParams = validateParams;
-exports.getURL = getURL;
-exports.patchURL = patchURL;
-exports.usePatch = usePatch;
 exports.getRequestTimeout = getRequestTimeout;
-exports.isAuthSupported = isAuthSupported;
-exports.getAuthToken = getAuthToken;
-exports.prepareParams = prepareParams;
-exports.patchPayload = patchPayload;
+exports.getURL = getURL;
 exports.handleResponse = handleResponse;
+exports.isAuthSupported = isAuthSupported;
+exports.patchPayload = patchPayload;
+exports.patchURL = patchURL;
+exports.prepareParams = prepareParams;
+exports.usePatch = usePatch;
+exports.validateParams = validateParams;
 
 var _flow_interfaces = __webpack_require__(2);
 
@@ -12105,9 +11792,146 @@ function isAuthSupported() {
   return true;
 }
 
-function getAuthToken(modules, incomingParams) {
-  var token = modules.tokenManager.getToken('user', incomingParams.userId) || modules.tokenManager.getToken('user');
-  return token;
+function prepareParams(modules, incomingParams) {
+  var include = incomingParams.include,
+      limit = incomingParams.limit,
+      page = incomingParams.page;
+  var params = {};
+
+  if (limit) {
+    params.limit = limit;
+  }
+
+  if (include) {
+    var includes = [];
+
+    if (include.totalCount) {
+      params.count = true;
+    }
+
+    if (include.customFields) {
+      includes.push('custom');
+    }
+
+    if (include.spaceFields) {
+      includes.push('space');
+    }
+
+    if (include.customSpaceFields) {
+      includes.push('space.custom');
+    }
+
+    var includesString = includes.join(',');
+
+    if (includesString.length > 0) {
+      params.include = includesString;
+    }
+  }
+
+  if (page) {
+    if (page.next) {
+      params.start = page.next;
+    }
+
+    if (page.prev) {
+      params.end = page.prev;
+    }
+  }
+
+  return params;
+}
+
+function patchPayload(modules, incomingParams) {
+  return prepareMessagePayload(modules, incomingParams);
+}
+
+function handleResponse(modules, membershipsResponse) {
+  return membershipsResponse;
+}
+
+/***/ }),
+/* 101 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var _interopRequireDefault = __webpack_require__(0);
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.getOperation = getOperation;
+exports.getRequestTimeout = getRequestTimeout;
+exports.getURL = getURL;
+exports.handleResponse = handleResponse;
+exports.isAuthSupported = isAuthSupported;
+exports.patchPayload = patchPayload;
+exports.patchURL = patchURL;
+exports.prepareParams = prepareParams;
+exports.usePatch = usePatch;
+exports.validateParams = validateParams;
+
+var _flow_interfaces = __webpack_require__(2);
+
+var _operations = _interopRequireDefault(__webpack_require__(1));
+
+var _utils = _interopRequireDefault(__webpack_require__(3));
+
+function prepareMessagePayload(modules, incomingParams) {
+  var spaces = incomingParams.spaces;
+  var payload = {};
+
+  if (spaces && spaces.length > 0) {
+    payload.add = [];
+    spaces.forEach(function (addMembership) {
+      var currentAdd = {
+        id: addMembership.id
+      };
+
+      if (addMembership.custom) {
+        currentAdd.custom = addMembership.custom;
+      }
+
+      payload.add.push(currentAdd);
+    });
+  }
+
+  return payload;
+}
+
+function getOperation() {
+  return _operations["default"].PNUpdateMembershipsOperation;
+}
+
+function validateParams(modules, incomingParams) {
+  var userId = incomingParams.userId,
+      spaces = incomingParams.spaces;
+  if (!userId) return 'Missing userId';
+  if (!spaces) return 'Missing spaces';
+}
+
+function getURL(modules, incomingParams) {
+  var config = modules.config;
+  return "/v1/objects/".concat(config.subscribeKey, "/users/").concat(_utils["default"].encodeString(incomingParams.userId), "/spaces");
+}
+
+function patchURL(modules, incomingParams) {
+  var config = modules.config;
+  return "/v1/objects/".concat(config.subscribeKey, "/users/").concat(_utils["default"].encodeString(incomingParams.userId), "/spaces");
+}
+
+function usePatch() {
+  return true;
+}
+
+function getRequestTimeout(_ref) {
+  var config = _ref.config;
+  return config.getTransactionTimeout();
+}
+
+function isAuthSupported() {
+  return true;
 }
 
 function prepareParams(modules, incomingParams) {
@@ -12180,16 +12004,15 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.getOperation = getOperation;
-exports.validateParams = validateParams;
-exports.getURL = getURL;
-exports.patchURL = patchURL;
-exports.usePatch = usePatch;
 exports.getRequestTimeout = getRequestTimeout;
-exports.isAuthSupported = isAuthSupported;
-exports.getAuthToken = getAuthToken;
-exports.prepareParams = prepareParams;
-exports.patchPayload = patchPayload;
+exports.getURL = getURL;
 exports.handleResponse = handleResponse;
+exports.isAuthSupported = isAuthSupported;
+exports.patchPayload = patchPayload;
+exports.patchURL = patchURL;
+exports.prepareParams = prepareParams;
+exports.usePatch = usePatch;
+exports.validateParams = validateParams;
 
 var _flow_interfaces = __webpack_require__(2);
 
@@ -12202,17 +12025,11 @@ function prepareMessagePayload(modules, incomingParams) {
   var payload = {};
 
   if (spaces && spaces.length > 0) {
-    payload.add = [];
-    spaces.forEach(function (addMembership) {
-      var currentAdd = {
-        id: addMembership.id
-      };
-
-      if (addMembership.custom) {
-        currentAdd.custom = addMembership.custom;
-      }
-
-      payload.add.push(currentAdd);
+    payload.remove = [];
+    spaces.forEach(function (removeMembershipId) {
+      payload.remove.push({
+        id: removeMembershipId
+      });
     });
   }
 
@@ -12251,11 +12068,6 @@ function getRequestTimeout(_ref) {
 
 function isAuthSupported() {
   return true;
-}
-
-function getAuthToken(modules, incomingParams) {
-  var token = modules.tokenManager.getToken('user', incomingParams.userId) || modules.tokenManager.getToken('user');
-  return token;
 }
 
 function prepareParams(modules, incomingParams) {
@@ -12328,154 +12140,12 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.getOperation = getOperation;
-exports.validateParams = validateParams;
-exports.getURL = getURL;
-exports.patchURL = patchURL;
-exports.usePatch = usePatch;
 exports.getRequestTimeout = getRequestTimeout;
-exports.isAuthSupported = isAuthSupported;
-exports.getAuthToken = getAuthToken;
-exports.prepareParams = prepareParams;
-exports.patchPayload = patchPayload;
+exports.getURL = getURL;
 exports.handleResponse = handleResponse;
-
-var _flow_interfaces = __webpack_require__(2);
-
-var _operations = _interopRequireDefault(__webpack_require__(1));
-
-var _utils = _interopRequireDefault(__webpack_require__(3));
-
-function prepareMessagePayload(modules, incomingParams) {
-  var spaces = incomingParams.spaces;
-  var payload = {};
-
-  if (spaces && spaces.length > 0) {
-    payload.remove = [];
-    spaces.forEach(function (removeMembershipId) {
-      payload.remove.push({
-        id: removeMembershipId
-      });
-    });
-  }
-
-  return payload;
-}
-
-function getOperation() {
-  return _operations["default"].PNUpdateMembershipsOperation;
-}
-
-function validateParams(modules, incomingParams) {
-  var userId = incomingParams.userId,
-      spaces = incomingParams.spaces;
-  if (!userId) return 'Missing userId';
-  if (!spaces) return 'Missing spaces';
-}
-
-function getURL(modules, incomingParams) {
-  var config = modules.config;
-  return "/v1/objects/".concat(config.subscribeKey, "/users/").concat(_utils["default"].encodeString(incomingParams.userId), "/spaces");
-}
-
-function patchURL(modules, incomingParams) {
-  var config = modules.config;
-  return "/v1/objects/".concat(config.subscribeKey, "/users/").concat(_utils["default"].encodeString(incomingParams.userId), "/spaces");
-}
-
-function usePatch() {
-  return true;
-}
-
-function getRequestTimeout(_ref) {
-  var config = _ref.config;
-  return config.getTransactionTimeout();
-}
-
-function isAuthSupported() {
-  return true;
-}
-
-function getAuthToken(modules, incomingParams) {
-  var token = modules.tokenManager.getToken('user', incomingParams.userId) || modules.tokenManager.getToken('user');
-  return token;
-}
-
-function prepareParams(modules, incomingParams) {
-  var include = incomingParams.include,
-      limit = incomingParams.limit,
-      page = incomingParams.page;
-  var params = {};
-
-  if (limit) {
-    params.limit = limit;
-  }
-
-  if (include) {
-    var includes = [];
-
-    if (include.totalCount) {
-      params.count = true;
-    }
-
-    if (include.customFields) {
-      includes.push('custom');
-    }
-
-    if (include.spaceFields) {
-      includes.push('space');
-    }
-
-    if (include.customSpaceFields) {
-      includes.push('space.custom');
-    }
-
-    var includesString = includes.join(',');
-
-    if (includesString.length > 0) {
-      params.include = includesString;
-    }
-  }
-
-  if (page) {
-    if (page.next) {
-      params.start = page.next;
-    }
-
-    if (page.prev) {
-      params.end = page.prev;
-    }
-  }
-
-  return params;
-}
-
-function patchPayload(modules, incomingParams) {
-  return prepareMessagePayload(modules, incomingParams);
-}
-
-function handleResponse(modules, membershipsResponse) {
-  return membershipsResponse;
-}
-
-/***/ }),
-/* 104 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-var _interopRequireDefault = __webpack_require__(0);
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.getOperation = getOperation;
-exports.validateParams = validateParams;
-exports.getURL = getURL;
-exports.getRequestTimeout = getRequestTimeout;
 exports.isAuthSupported = isAuthSupported;
 exports.prepareParams = prepareParams;
-exports.handleResponse = handleResponse;
+exports.validateParams = validateParams;
 
 var _flow_interfaces = __webpack_require__(2);
 
@@ -12531,7 +12201,7 @@ function handleResponse(modules, serverResponse) {
 }
 
 /***/ }),
-/* 105 */
+/* 104 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -12543,12 +12213,12 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.getOperation = getOperation;
-exports.validateParams = validateParams;
-exports.getURL = getURL;
 exports.getRequestTimeout = getRequestTimeout;
+exports.getURL = getURL;
+exports.handleResponse = handleResponse;
 exports.isAuthSupported = isAuthSupported;
 exports.prepareParams = prepareParams;
-exports.handleResponse = handleResponse;
+exports.validateParams = validateParams;
 
 var _flow_interfaces = __webpack_require__(2);
 
@@ -12647,7 +12317,7 @@ function handleResponse() {
 }
 
 /***/ }),
-/* 106 */
+/* 105 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -12658,16 +12328,16 @@ var _interopRequireDefault = __webpack_require__(0);
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.getOperation = getOperation;
 exports.extractPermissions = extractPermissions;
-exports.validateParams = validateParams;
-exports.postURL = postURL;
-exports.usePost = usePost;
+exports.getOperation = getOperation;
 exports.getRequestTimeout = getRequestTimeout;
-exports.isAuthSupported = isAuthSupported;
-exports.prepareParams = prepareParams;
-exports.postPayload = postPayload;
 exports.handleResponse = handleResponse;
+exports.isAuthSupported = isAuthSupported;
+exports.postPayload = postPayload;
+exports.postURL = postURL;
+exports.prepareParams = prepareParams;
+exports.usePost = usePost;
+exports.validateParams = validateParams;
 
 var _flow_interfaces = __webpack_require__(2);
 
@@ -12680,8 +12350,16 @@ function getOperation() {
 function extractPermissions(permissions) {
   var permissionsResult = 0;
 
-  if (permissions.create) {
-    permissionsResult |= 16;
+  if (permissions.join) {
+    permissionsResult |= 128;
+  }
+
+  if (permissions.update) {
+    permissionsResult |= 64;
+  }
+
+  if (permissions.get) {
+    permissionsResult |= 32;
   }
 
   if (permissions["delete"]) {
@@ -12707,19 +12385,22 @@ function prepareMessagePayload(modules, incomingParams) {
   var ttl = incomingParams.ttl,
       resources = incomingParams.resources,
       patterns = incomingParams.patterns,
-      meta = incomingParams.meta;
+      meta = incomingParams.meta,
+      authorized_uuid = incomingParams.authorized_uuid;
   var params = {
     ttl: 0,
     permissions: {
       resources: {
         channels: {},
         groups: {},
+        uuids: {},
         users: {},
         spaces: {}
       },
       patterns: {
         channels: {},
         groups: {},
+        uuids: {},
         users: {},
         spaces: {}
       },
@@ -12728,20 +12409,13 @@ function prepareMessagePayload(modules, incomingParams) {
   };
 
   if (resources) {
-    var users = resources.users,
-        spaces = resources.spaces,
+    var uuids = resources.uuids,
         channels = resources.channels,
         groups = resources.groups;
 
-    if (users) {
-      Object.keys(users).forEach(function (user) {
-        params.permissions.resources.users[user] = extractPermissions(users[user]);
-      });
-    }
-
-    if (spaces) {
-      Object.keys(spaces).forEach(function (space) {
-        params.permissions.resources.spaces[space] = extractPermissions(spaces[space]);
+    if (uuids) {
+      Object.keys(uuids).forEach(function (uuid) {
+        params.permissions.resources.uuids[uuid] = extractPermissions(uuids[uuid]);
       });
     }
 
@@ -12759,20 +12433,13 @@ function prepareMessagePayload(modules, incomingParams) {
   }
 
   if (patterns) {
-    var _users = patterns.users,
-        _spaces = patterns.spaces,
+    var _uuids = patterns.uuids,
         _channels = patterns.channels,
         _groups = patterns.groups;
 
-    if (_users) {
-      Object.keys(_users).forEach(function (user) {
-        params.permissions.patterns.users[user] = extractPermissions(_users[user]);
-      });
-    }
-
-    if (_spaces) {
-      Object.keys(_spaces).forEach(function (space) {
-        params.permissions.patterns.spaces[space] = extractPermissions(_spaces[space]);
+    if (_uuids) {
+      Object.keys(_uuids).forEach(function (uuid) {
+        params.permissions.patterns.uuids[uuid] = extractPermissions(_uuids[uuid]);
       });
     }
 
@@ -12797,6 +12464,10 @@ function prepareMessagePayload(modules, incomingParams) {
     params.permissions.meta = meta;
   }
 
+  if (authorized_uuid) {
+    params.permissions.uuid = "".concat(authorized_uuid);
+  }
+
   return params;
 }
 
@@ -12807,7 +12478,7 @@ function validateParams(modules, incomingParams) {
   if (!config.secretKey) return 'Missing Secret Key';
   if (!incomingParams.resources && !incomingParams.patterns) return 'Missing either Resources or Patterns.';
 
-  if (incomingParams.resources && (!incomingParams.resources.users || Object.keys(incomingParams.resources.users).length === 0) && (!incomingParams.resources.spaces || Object.keys(incomingParams.resources.spaces).length === 0) && (!incomingParams.resources.channels || Object.keys(incomingParams.resources.channels).length === 0) && (!incomingParams.resources.groups || Object.keys(incomingParams.resources.groups).length === 0) || incomingParams.patterns && (!incomingParams.patterns.users || Object.keys(incomingParams.patterns.users).length === 0) && (!incomingParams.patterns.spaces || Object.keys(incomingParams.patterns.spaces).length === 0) && (!incomingParams.patterns.channels || Object.keys(incomingParams.patterns.channels).length === 0) && (!incomingParams.patterns.groups || Object.keys(incomingParams.patterns.groups).length === 0)) {
+  if (incomingParams.resources && (!incomingParams.resources.uuids || Object.keys(incomingParams.resources.uuids).length === 0) && (!incomingParams.resources.channels || Object.keys(incomingParams.resources.channels).length === 0) && (!incomingParams.resources.groups || Object.keys(incomingParams.resources.groups).length === 0) || incomingParams.patterns && (!incomingParams.patterns.uuids || Object.keys(incomingParams.patterns.uuids).length === 0) && (!incomingParams.patterns.channels || Object.keys(incomingParams.patterns.channels).length === 0) && (!incomingParams.patterns.groups || Object.keys(incomingParams.patterns.groups).length === 0)) {
     return 'Missing values for either Resources or Patterns.';
   }
 }
@@ -12844,6 +12515,70 @@ function handleResponse(modules, response) {
 }
 
 /***/ }),
+/* 106 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var _interopRequireDefault = __webpack_require__(0);
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports["default"] = void 0;
+
+var _operations = _interopRequireDefault(__webpack_require__(1));
+
+var _utils = _interopRequireDefault(__webpack_require__(3));
+
+var endpoint = {
+  getOperation: function getOperation() {
+    return _operations["default"].PNAccessManagerRevokeToken;
+  },
+  validateParams: function validateParams(modules, token) {
+    var secretKey = modules.config.secretKey;
+
+    if (!secretKey) {
+      return 'Missing Secret Key';
+    }
+
+    if (!token) {
+      return "token can't be empty";
+    }
+  },
+  getURL: function getURL(_ref, token) {
+    var config = _ref.config;
+    return "/v3/pam/".concat(config.subscribeKey, "/grant/").concat(_utils["default"].encodeString(token));
+  },
+  useDelete: function useDelete() {
+    return true;
+  },
+  getRequestTimeout: function getRequestTimeout(_ref2) {
+    var config = _ref2.config;
+    return config.getTransactionTimeout();
+  },
+  isAuthSupported: function isAuthSupported() {
+    return false;
+  },
+  prepareParams: function prepareParams(_ref3) {
+    var config = _ref3.config;
+    return {
+      uuid: config.getUUID()
+    };
+  },
+  handleResponse: function handleResponse(_, response) {
+    return {
+      status: response.status,
+      data: response.data
+    };
+  }
+};
+var _default = endpoint;
+exports["default"] = _default;
+module.exports = exports.default;
+
+/***/ }),
 /* 107 */
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -12856,15 +12591,15 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.getOperation = getOperation;
-exports.validateParams = validateParams;
-exports.usePost = usePost;
-exports.getURL = getURL;
-exports.postURL = postURL;
 exports.getRequestTimeout = getRequestTimeout;
+exports.getURL = getURL;
+exports.handleResponse = handleResponse;
 exports.isAuthSupported = isAuthSupported;
 exports.postPayload = postPayload;
+exports.postURL = postURL;
 exports.prepareParams = prepareParams;
-exports.handleResponse = handleResponse;
+exports.usePost = usePost;
+exports.validateParams = validateParams;
 
 var _typeof2 = _interopRequireDefault(__webpack_require__(7));
 
@@ -12984,12 +12719,12 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.getOperation = getOperation;
-exports.validateParams = validateParams;
-exports.getURL = getURL;
 exports.getRequestTimeout = getRequestTimeout;
+exports.getURL = getURL;
+exports.handleResponse = handleResponse;
 exports.isAuthSupported = isAuthSupported;
 exports.prepareParams = prepareParams;
-exports.handleResponse = handleResponse;
+exports.validateParams = validateParams;
 
 var _flow_interfaces = __webpack_require__(2);
 
@@ -13056,12 +12791,12 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.getOperation = getOperation;
-exports.validateParams = validateParams;
-exports.getURL = getURL;
 exports.getRequestTimeout = getRequestTimeout;
+exports.getURL = getURL;
+exports.handleResponse = handleResponse;
 exports.isAuthSupported = isAuthSupported;
 exports.prepareParams = prepareParams;
-exports.handleResponse = handleResponse;
+exports.validateParams = validateParams;
 
 var _flow_interfaces = __webpack_require__(2);
 
@@ -13167,13 +12902,13 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.getOperation = getOperation;
-exports.validateParams = validateParams;
-exports.useDelete = useDelete;
-exports.getURL = getURL;
 exports.getRequestTimeout = getRequestTimeout;
+exports.getURL = getURL;
+exports.handleResponse = handleResponse;
 exports.isAuthSupported = isAuthSupported;
 exports.prepareParams = prepareParams;
-exports.handleResponse = handleResponse;
+exports.useDelete = useDelete;
+exports.validateParams = validateParams;
 
 var _flow_interfaces = __webpack_require__(2);
 
@@ -13237,12 +12972,12 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.getOperation = getOperation;
-exports.validateParams = validateParams;
-exports.getURL = getURL;
 exports.getRequestTimeout = getRequestTimeout;
+exports.getURL = getURL;
+exports.handleResponse = handleResponse;
 exports.isAuthSupported = isAuthSupported;
 exports.prepareParams = prepareParams;
-exports.handleResponse = handleResponse;
+exports.validateParams = validateParams;
 
 var _slicedToArray2 = _interopRequireDefault(__webpack_require__(9));
 
@@ -13319,12 +13054,12 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.getOperation = getOperation;
-exports.validateParams = validateParams;
-exports.getURL = getURL;
 exports.getRequestTimeout = getRequestTimeout;
+exports.getURL = getURL;
+exports.handleResponse = handleResponse;
 exports.isAuthSupported = isAuthSupported;
 exports.prepareParams = prepareParams;
-exports.handleResponse = handleResponse;
+exports.validateParams = validateParams;
 
 var _flow_interfaces = __webpack_require__(2);
 
@@ -13460,12 +13195,12 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.getOperation = getOperation;
-exports.validateParams = validateParams;
-exports.getURL = getURL;
 exports.getRequestTimeout = getRequestTimeout;
+exports.getURL = getURL;
+exports.handleResponse = handleResponse;
 exports.isAuthSupported = isAuthSupported;
 exports.prepareParams = prepareParams;
-exports.handleResponse = handleResponse;
+exports.validateParams = validateParams;
 
 var _flow_interfaces = __webpack_require__(2);
 
@@ -13599,11 +13334,9 @@ var _default = function () {
     (0, _classCallCheck2["default"])(this, _default);
     (0, _defineProperty2["default"])(this, "_modules", void 0);
     (0, _defineProperty2["default"])(this, "_config", void 0);
-    (0, _defineProperty2["default"])(this, "_maxSubDomain", void 0);
     (0, _defineProperty2["default"])(this, "_currentSubDomain", void 0);
     (0, _defineProperty2["default"])(this, "_standardOrigin", void 0);
     (0, _defineProperty2["default"])(this, "_subscribeOrigin", void 0);
-    (0, _defineProperty2["default"])(this, "_providedFQDN", void 0);
     (0, _defineProperty2["default"])(this, "_requestTimeout", void 0);
     (0, _defineProperty2["default"])(this, "_coreParams", void 0);
     this._modules = {};
@@ -13616,28 +13349,33 @@ var _default = function () {
     key: "init",
     value: function init(config) {
       this._config = config;
-      this._maxSubDomain = 20;
-      this._currentSubDomain = Math.floor(Math.random() * this._maxSubDomain);
-      this._providedFQDN = (this._config.secure ? 'https://' : 'http://') + this._config.origin;
+
+      if (Array.isArray(this._config.origin)) {
+        this._currentSubDomain = Math.floor(Math.random() * this._config.origin.length);
+      } else {
+        this._currentSubDomain = 0;
+      }
+
       this._coreParams = {};
       this.shiftStandardOrigin();
     }
   }, {
     key: "nextOrigin",
     value: function nextOrigin() {
-      if (!this._providedFQDN.match(/ps\.pndsn\.com$/i)) {
-        return this._providedFQDN;
+      var protocol = this._config.secure ? 'https://' : 'http://';
+
+      if (typeof this._config.origin === 'string') {
+        return "".concat(protocol).concat(this._config.origin);
       }
 
-      var newSubDomain;
       this._currentSubDomain += 1;
 
-      if (this._currentSubDomain >= this._maxSubDomain) {
-        this._currentSubDomain = 1;
+      if (this._currentSubDomain >= this._config.origin.length) {
+        this._currentSubDomain = 0;
       }
 
-      newSubDomain = this._currentSubDomain.toString();
-      return this._providedFQDN.replace('ps.pndsn.com', "ps".concat(newSubDomain, ".pndsn.com"));
+      var origin = this._config.origin[this._currentSubDomain];
+      return "".concat(protocol).concat(origin);
     }
   }, {
     key: "hasModule",
@@ -13846,10 +13584,10 @@ module.exports = exports.default;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.get = get;
-exports.post = post;
-exports.patch = patch;
 exports.del = del;
+exports.get = get;
+exports.patch = patch;
+exports.post = post;
 
 var _flow_interfaces = __webpack_require__(2);
 
@@ -13962,8 +13700,8 @@ var _interopRequireDefault = __webpack_require__(0);
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.encodedKeyValuePair = encodedKeyValuePair;
 exports.buildUrl = buildUrl;
+exports.encodedKeyValuePair = encodedKeyValuePair;
 
 var _typeof2 = _interopRequireDefault(__webpack_require__(7));
 
