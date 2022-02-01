@@ -296,26 +296,46 @@ type ListChannelsResponse = {
 
 // push
 
+export type APNS2Target = {
+  topic: string,
+  environment?: 'development' | 'production',
+  excludedDevices?: Array<string>
+}
+
+export type APNS2Configuration = {
+  collapseId?: string,
+  expirationDate?: Date,
+  targets: Array<APNS2Target>
+}
+
 type ProvisionDeviceArgs = {
   operation: 'add' | 'remove',
-  pushGateway: 'gcm' | 'apns' | 'mpns',
+  pushGateway: 'gcm' | 'apns' | 'apns2' | 'mpns',
+  environment?: 'development' | 'production',
+  topic?: string,
   device: string,
   channels: Array<string>
 };
 
 type ModifyDeviceArgs = {
-  pushGateway: 'gcm' | 'apns' | 'mpns',
+  pushGateway: 'gcm' | 'apns' | 'apns2' | 'mpns',
+  environment?: 'development' | 'production',
+  topic?: string,
   device: string,
   channels: Array<string>
 };
 
 type ListChannelsArgs = {
-  pushGateway: 'gcm' | 'apns' | 'mpns',
+  pushGateway: 'gcm' | 'apns' | 'apns2' | 'mpns',
+  environment?: 'development' | 'production',
+  topic?: string,
   device: string,
 };
 
 type RemoveDeviceArgs = {
-  pushGateway: 'gcm' | 'apns' | 'mpns',
+  pushGateway: 'gcm' | 'apns' | 'apns2' | 'mpns',
+  environment?: 'development' | 'production',
+  topic?: string,
   device: string,
 };
 
@@ -336,7 +356,8 @@ type HereNowArguments = {
   channels: Array<string>,
   channelGroups: Array<string>,
   includeUUIDs: boolean,
-  includeState: boolean
+  includeState: boolean,
+  queryParameters?: Object
 }
 
 type WhereNowArguments = {
@@ -404,10 +425,15 @@ type AuditArguments = {
 type GrantArguments = {
   channels: Array<string>,
   channelGroups: Array<string>,
+  uuids: Array<string>,
   ttl: number,
   read: boolean,
   write: boolean,
   manage: boolean,
+  get: boolean,
+  join: boolean,
+  update: boolean,
+  delete: Boolean,
   authKeys: Array<string>
 }
 
@@ -573,7 +599,8 @@ type UserListInput = {
   include?: {
     totalCount?: boolean,
     customFields?: boolean,
-  }
+  },
+  filter?: string,
 }
 
 type SingleUserInput = {
@@ -621,7 +648,8 @@ type SpaceListInput = {
   include?: {
     totalCount?: boolean,
     customFields?: boolean,
-  }
+  },
+  filter?: string,
 }
 
 type SingleSpaceInput = {
@@ -683,7 +711,8 @@ type MembershipsInput = {
     customFields?: boolean,
     spaceFields?: boolean,
     customSpaceFields?: boolean,
-  }
+  },
+  filter?: string,
 }
 
 type MembershipsObjectInput = {
@@ -738,7 +767,8 @@ type MembersInput = {
     customFields?: boolean,
     userFields?: boolean,
     customUserFields?: boolean,
-  }
+  },
+  filter?: string,
 }
 
 type MembersObjectInput = {
