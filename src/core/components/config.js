@@ -2,12 +2,7 @@
 /* global location */
 
 import uuidGenerator from './uuid';
-import {
-  InternalSetupStruct,
-  DatabaseInterface,
-  KeepAliveStruct,
-  ProxyStruct,
-} from '../flow_interfaces';
+import { InternalSetupStruct, DatabaseInterface, KeepAliveStruct, ProxyStruct } from '../flow_interfaces';
 
 const PRESENCE_TIMEOUT_MINIMUM: number = 20;
 const PRESENCE_TIMEOUT_DEFAULT: number = 300;
@@ -113,6 +108,12 @@ export default class {
   _useSendBeacon: boolean;
 
   /*
+    allow frameworks to append to the PNSDK parameter
+    the key should be an identifier for the specific framework to prevent duplicates
+  */
+  _PNSDKSuffix: { [key: string]: string };
+
+  /*
     if set, the SDK will alert if more messages arrive in one subscribe than the theshold
   */
   requestMessageCountThreshold: number;
@@ -136,7 +137,14 @@ export default class {
 
   customDecrypt: Function; // function used to decrypt old version messages
 
+  // File Upload
+
+  // How many times the publish-file should be retried before giving up
+  fileUploadPublishRetryLimit: number;
+  useRandomIVs: boolean;
+
   constructor({ setup, db }: ConfigConstructArgs) {
+    this._PNSDKSuffix = {};
     this._db = db;
 
     this.instanceId = `pn-${uuidGenerator.createUUID()}`;
@@ -165,6 +173,9 @@ export default class {
     this.customEncrypt = setup.customEncrypt;
     this.customDecrypt = setup.customDecrypt;
 
+    this.fileUploadPublishRetryLimit = setup.fileUploadPublishRetryLimit ?? 5;
+    this.useRandomIVs = setup.useRandomIVs ?? true;
+
     // if location config exist and we are in https, force secure to true.
     if (typeof location !== 'undefined' && location.protocol === 'https:') {
       this.secure = true;
@@ -174,8 +185,7 @@ export default class {
     this.suppressLeaveEvents = setup.suppressLeaveEvents || false;
 
     this.announceFailedHeartbeats = setup.announceFailedHeartbeats || true;
-    this.announceSuccessfulHeartbeats =
-      setup.announceSuccessfulHeartbeats || false;
+    this.announceSuccessfulHeartbeats = setup.announceSuccessfulHeartbeats || false;
 
     this.useInstanceId = setup.useInstanceId || false;
     this.useRequestId = setup.useRequestId || false;
@@ -189,7 +199,11 @@ export default class {
     // set config on beacon (https://developer.mozilla.org/en-US/docs/Web/API/Navigator/sendBeacon) usage
     this.setSendBeaconConfig(setup.useSendBeacon || true);
     // how long the SDK will report the client to be alive before issuing a timeout
-    this.setPresenceTimeout(setup.presenceTimeout || PRESENCE_TIMEOUT_DEFAULT);
+    if (setup.presenceTimeout) {
+      this.setPresenceTimeout(setup.presenceTimeout);
+    } else {
+      this._presenceTimeout = PRESENCE_TIMEOUT_DEFAULT;
+    }
 
     if (setup.heartbeatInterval != null) {
       this.setHeartbeatInterval(setup.heartbeatInterval);
@@ -243,10 +257,7 @@ export default class {
       this._presenceTimeout = PRESENCE_TIMEOUT_MINIMUM;
 
       // eslint-disable-next-line no-console
-      console.log(
-        'WARNING: Presence timeout is less than the minimum. Using minimum value: ',
-        this._presenceTimeout
-      );
+      console.log('WARNING: Presence timeout is less than the minimum. Using minimum value: ', this._presenceTimeout);
     }
 
     this.setHeartbeatInterval(this._presenceTimeout / 2 - 1);
@@ -296,7 +307,15 @@ export default class {
   }
 
   getVersion(): string {
-    return '4.24.6';
+    return '4.32.1';
+  }
+
+  _addPnsdkSuffix(name: string, suffix: string) {
+    this._PNSDKSuffix[name] = suffix;
+  }
+
+  _getPnsdkSuffix(separator: string): string {
+    return Object.keys(this._PNSDKSuffix).reduce((result, key) => result + separator + this._PNSDKSuffix[key], '');
   }
 
   _decideUUID(providedUUID: string): string {
