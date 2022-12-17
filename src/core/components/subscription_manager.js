@@ -6,11 +6,14 @@ import ReconnectionManager from '../components/reconnection_manager';
 import DedupingManager from '../components/deduping_manager';
 import utils from '../utils';
 import {
+  MessageActionAnnouncement,
   MessageAnnouncement,
   SignalAnnouncement,
+  ObjectAnnouncement,
   SubscribeEnvelope,
   StatusAnnouncement,
   PresenceAnnouncement,
+  FileAnnouncement,
 } from '../flow_interfaces';
 import categoryConstants from '../constants/categories';
 
@@ -45,6 +48,7 @@ type SubscriptionManagerConstruct = {
   timeEndpoint: Function,
   heartbeatEndpoint: Function,
   setStateEndpoint: Function,
+  getFileUrl: ({| id: string, name: string, channel: string |}) => string,
   config: Config,
   crypto: Crypto,
   listenerManager: ListenerManager,
@@ -60,6 +64,7 @@ export default class {
   _heartbeatEndpoint: Function;
   _setStateEndpoint: Function;
   _subscribeEndpoint: Function;
+  _getFileUrl: ({| id: string, name: string, channel: string |}) => string;
 
   _channels: Object;
   _presenceChannels: Object;
@@ -97,6 +102,7 @@ export default class {
     heartbeatEndpoint,
     setStateEndpoint,
     timeEndpoint,
+    getFileUrl,
     config,
     crypto,
     listenerManager,
@@ -108,6 +114,7 @@ export default class {
     this._heartbeatEndpoint = heartbeatEndpoint;
     this._setStateEndpoint = setStateEndpoint;
     this._subscribeEndpoint = subscribeEndpoint;
+    this._getFileUrl = getFileUrl;
 
     this._crypto = crypto;
 
@@ -186,13 +193,7 @@ export default class {
   }
 
   adaptSubscribeChange(args: SubscribeArgs) {
-    const {
-      timetoken,
-      channels = [],
-      channelGroups = [],
-      withPresence = false,
-      withHeartbeats = false,
-    } = args;
+    const { timetoken, channels = [], channelGroups = [], withPresence = false, withHeartbeats = false } = args;
 
     if (!this._config.subscribeKey || this._config.subscribeKey === '') {
       // eslint-disable-next-line
@@ -279,16 +280,13 @@ export default class {
     }
 
     if (this._config.suppressLeaveEvents === false && !isOffline) {
-      this._leaveEndpoint(
-        { channels: actualChannels, channelGroups: actualChannelGroups },
-        (status) => {
-          status.affectedChannels = actualChannels;
-          status.affectedChannelGroups = actualChannelGroups;
-          status.currentTimetoken = this._currentTimetoken;
-          status.lastTimetoken = this._lastTimetoken;
-          this._listenerManager.announceStatus(status);
-        }
-      );
+      this._leaveEndpoint({ channels: actualChannels, channelGroups: actualChannelGroups }, (status) => {
+        status.affectedChannels = actualChannels;
+        status.affectedChannelGroups = actualChannelGroups;
+        status.currentTimetoken = this._currentTimetoken;
+        status.lastTimetoken = this._lastTimetoken;
+        this._listenerManager.announceStatus(status);
+      });
     }
 
     // if we have nothing to subscribe to, reset the timetoken.
@@ -348,8 +346,8 @@ export default class {
   _registerHeartbeatTimer() {
     this._stopHeartbeatTimer();
 
-    // if the interval is 0, do not queue up heartbeating
-    if (this._config.getHeartbeatInterval() === 0) {
+    // if the interval is 0 or undefined, do not queue up heartbeating
+    if (this._config.getHeartbeatInterval() === 0 || this._config.getHeartbeatInterval() === undefined) {
       return;
     }
 
@@ -466,31 +464,19 @@ export default class {
       region: this._region,
     };
 
-    this._subscribeCall = this._subscribeEndpoint(
-      subscribeArgs,
-      this._processSubscribeResponse.bind(this)
-    );
+    this._subscribeCall = this._subscribeEndpoint(subscribeArgs, this._processSubscribeResponse.bind(this));
   }
 
-  _processSubscribeResponse(
-    status: StatusAnnouncement,
-    payload: SubscribeEnvelope
-  ) {
+  _processSubscribeResponse(status: StatusAnnouncement, payload: SubscribeEnvelope) {
     if (status.error) {
       // if we timeout from server, restart the loop.
       if (status.category === categoryConstants.PNTimeoutCategory) {
         this._startSubscribeLoop();
-      } else if (
-        status.category === categoryConstants.PNNetworkIssuesCategory
-      ) {
+      } else if (status.category === categoryConstants.PNNetworkIssuesCategory) {
         // we lost internet connection, alert the reconnection manager and terminate all loops
         this.disconnect();
 
-        if (
-          status.error &&
-          this._config.autoNetworkDetection &&
-          this._isOnline
-        ) {
+        if (status.error && this._config.autoNetworkDetection && this._isOnline) {
           this._isOnline = false;
           this._listenerManager.announceNetworkDown();
         }
@@ -551,13 +537,9 @@ export default class {
     let messages = payload.messages || [];
     let { requestMessageCountThreshold, dedupeOnSubscribe } = this._config;
 
-    if (
-      requestMessageCountThreshold &&
-      messages.length >= requestMessageCountThreshold
-    ) {
+    if (requestMessageCountThreshold && messages.length >= requestMessageCountThreshold) {
       let countAnnouncement: StatusAnnouncement = {};
-      countAnnouncement.category =
-        categoryConstants.PNRequestMessageCountExceededCategory;
+      countAnnouncement.category = categoryConstants.PNRequestMessageCountExceededCategory;
       countAnnouncement.operation = status.operation;
       this._listenerManager.announceStatus(countAnnouncement);
     }
@@ -586,22 +568,15 @@ export default class {
 
         // deprecated -->
         announce.actualChannel = subscriptionMatch != null ? channel : null;
-        announce.subscribedChannel =
-          subscriptionMatch != null ? subscriptionMatch : channel;
+        announce.subscribedChannel = subscriptionMatch != null ? subscriptionMatch : channel;
         // <-- deprecated
 
         if (channel) {
-          announce.channel = channel.substring(
-            0,
-            channel.lastIndexOf('-pnpres')
-          );
+          announce.channel = channel.substring(0, channel.lastIndexOf('-pnpres'));
         }
 
         if (subscriptionMatch) {
-          announce.subscription = subscriptionMatch.substring(
-            0,
-            subscriptionMatch.lastIndexOf('-pnpres')
-          );
+          announce.subscription = subscriptionMatch.substring(0, subscriptionMatch.lastIndexOf('-pnpres'));
         }
 
         announce.action = message.payload.action;
@@ -642,6 +617,92 @@ export default class {
         announce.message = message.payload;
 
         this._listenerManager.announceSignal(announce);
+      } else if (message.messageType === 2) {
+        // this is an object message
+
+        let announce: ObjectAnnouncement = {};
+
+        announce.channel = null;
+        announce.subscription = null;
+
+        announce.channel = channel;
+        announce.subscription = subscriptionMatch;
+        announce.timetoken = publishMetaData.publishTimetoken;
+        announce.publisher = message.issuingClientId;
+
+        if (message.userMetadata) {
+          announce.userMetadata = message.userMetadata;
+        }
+
+        announce.message = {
+          event: message.payload.event,
+          type: message.payload.type,
+          data: message.payload.data,
+        };
+
+        this._listenerManager.announceObjects(announce);
+
+        if (message.payload.type === 'user') {
+          this._listenerManager.announceUser(announce);
+        } else if (message.payload.type === 'space') {
+          this._listenerManager.announceSpace(announce);
+        } else if (message.payload.type === 'membership') {
+          this._listenerManager.announceMembership(announce);
+        }
+      } else if (message.messageType === 3) {
+        // this is a message action
+        let announce: MessageActionAnnouncement = {};
+        announce.channel = channel;
+        announce.subscription = subscriptionMatch;
+        announce.timetoken = publishMetaData.publishTimetoken;
+        announce.publisher = message.issuingClientId;
+
+        announce.data = {
+          messageTimetoken: message.payload.data.messageTimetoken,
+          actionTimetoken: message.payload.data.actionTimetoken,
+          type: message.payload.data.type,
+          uuid: message.issuingClientId,
+          value: message.payload.data.value,
+        };
+
+        announce.event = message.payload.event;
+
+        this._listenerManager.announceMessageAction(announce);
+      } else if (message.messageType === 4) {
+        // this is a file message
+        let announce: FileAnnouncement = {};
+        announce.channel = channel;
+        announce.subscription = subscriptionMatch;
+        announce.timetoken = publishMetaData.publishTimetoken;
+        announce.publisher = message.issuingClientId;
+
+        let msgPayload = message.payload;
+
+        if (this._config.cipherKey) {
+          const decryptedPayload = this._crypto.decrypt(message.payload);
+
+          if (typeof decryptedPayload === 'object' && decryptedPayload !== null) {
+            msgPayload = decryptedPayload;
+          }
+        }
+
+        if (message.userMetadata) {
+          announce.userMetadata = message.userMetadata;
+        }
+
+        announce.message = msgPayload.message;
+
+        announce.file = {
+          id: msgPayload.file.id,
+          name: msgPayload.file.name,
+          url: this._getFileUrl({
+            id: msgPayload.file.id,
+            name: msgPayload.file.name,
+            channel,
+          }),
+        };
+
+        this._listenerManager.announceFile(announce);
       } else {
         let announce: MessageAnnouncement = {};
         announce.channel = null;
@@ -649,8 +710,7 @@ export default class {
 
         // deprecated -->
         announce.actualChannel = subscriptionMatch != null ? channel : null;
-        announce.subscribedChannel =
-          subscriptionMatch != null ? subscriptionMatch : channel;
+        announce.subscribedChannel = subscriptionMatch != null ? subscriptionMatch : channel;
         // <-- deprecated
 
         announce.channel = channel;
