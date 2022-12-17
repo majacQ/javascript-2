@@ -1,7 +1,14 @@
 .DS_Store
 node_modules
+resources/titanium
+resources/__MACOSX
 javascript.iml
 *.js-e
+*.json-e
 upload/*
+coverage/
+.nyc_output/
 .idea
 *.iml
+dist/web/stats.json
+dist/titanium/stats.json
