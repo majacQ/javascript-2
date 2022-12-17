@@ -356,7 +356,8 @@ type HereNowArguments = {
   channels: Array<string>,
   channelGroups: Array<string>,
   includeUUIDs: boolean,
-  includeState: boolean
+  includeState: boolean,
+  queryParameters?: Object
 }
 
 type WhereNowArguments = {
@@ -424,10 +425,15 @@ type AuditArguments = {
 type GrantArguments = {
   channels: Array<string>,
   channelGroups: Array<string>,
+  uuids: Array<string>,
   ttl: number,
   read: boolean,
   write: boolean,
   manage: boolean,
+  get: boolean,
+  join: boolean,
+  update: boolean,
+  delete: Boolean,
   authKeys: Array<string>
 }
 
@@ -593,7 +599,8 @@ type UserListInput = {
   include?: {
     totalCount?: boolean,
     customFields?: boolean,
-  }
+  },
+  filter?: string,
 }
 
 type SingleUserInput = {
@@ -641,7 +648,8 @@ type SpaceListInput = {
   include?: {
     totalCount?: boolean,
     customFields?: boolean,
-  }
+  },
+  filter?: string,
 }
 
 type SingleSpaceInput = {
@@ -703,7 +711,8 @@ type MembershipsInput = {
     customFields?: boolean,
     spaceFields?: boolean,
     customSpaceFields?: boolean,
-  }
+  },
+  filter?: string,
 }
 
 type MembershipsObjectInput = {
@@ -758,7 +767,8 @@ type MembersInput = {
     customFields?: boolean,
     userFields?: boolean,
     customUserFields?: boolean,
-  }
+  },
+  filter?: string,
 }
 
 type MembersObjectInput = {

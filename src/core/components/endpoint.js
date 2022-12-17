@@ -3,8 +3,9 @@ import { StatusAnnouncement } from '../flow_interfaces';
 import utils from '../utils';
 import Config from './config';
 import operationConstants from '../constants/operations';
+import categoryConstants from '../constants/categories';
 
-class PubNubError extends Error {
+export class PubNubError extends Error {
   constructor(message, status) {
     super(message);
     this.name = this.constructor.name;
@@ -19,7 +20,7 @@ function createError(errorPayload: Object, type: string): Object {
   return errorPayload;
 }
 
-function createValidationError(message: string): Object {
+export function createValidationError(message: string): Object {
   return createError({ message }, 'validationError');
 }
 
@@ -28,6 +29,8 @@ function decideURL(endpoint, modules, incomingParams) {
     return endpoint.postURL(modules, incomingParams);
   } else if (endpoint.usePatch && endpoint.usePatch(modules, incomingParams)) {
     return endpoint.patchURL(modules, incomingParams);
+  } else if (endpoint.useGetFile && endpoint.useGetFile(modules, incomingParams)) {
+    return endpoint.getFileURL(modules, incomingParams);
   } else {
     return endpoint.getURL(modules, incomingParams);
   }
@@ -43,7 +46,7 @@ function getAuthToken(endpoint, modules, incomingParams) {
   return token;
 }
 
-function generatePNSDK(config: Config): string {
+export function generatePNSDK(config: Config): string {
   if (config.sdkName) {
     return config.sdkName;
   }
@@ -72,17 +75,29 @@ function getHttpMethod(modules, endpoint, incomingParams) {
     return 'PATCH';
   } else if (endpoint.useDelete && endpoint.useDelete(modules, incomingParams)) {
     return 'DELETE';
+  } else if (endpoint.useGetFile && endpoint.useGetFile(modules, incomingParams)) {
+    return 'GETFILE';
   } else {
     return 'GET';
   }
 }
 
-function signRequest(modules, url, outgoingParams, incomingParams, endpoint) {
+export function signRequest(modules, url, outgoingParams, incomingParams, endpoint) {
   let { config, crypto } = modules;
 
   let httpMethod = getHttpMethod(modules, endpoint, incomingParams);
 
   outgoingParams.timestamp = Math.floor(new Date().getTime() / 1000);
+
+  // This is because of a server-side bug, old publish using post should be deprecated
+  if (endpoint.getOperation() === 'PNPublishOperation' && endpoint.usePost && endpoint.usePost(modules, incomingParams)) {
+    httpMethod = 'GET';
+  }
+
+  if (httpMethod === 'GETFILE') {
+    httpMethod = 'GET';
+  }
+
   let signInput = `${httpMethod}\n${config.publishKey}\n${url}\n${utils.signPamFromParams(outgoingParams)}\n`;
 
   if (httpMethod === 'POST') {
@@ -109,13 +124,17 @@ function signRequest(modules, url, outgoingParams, incomingParams, endpoint) {
   outgoingParams.signature = signature;
 }
 
-export default function(modules, endpoint, ...args) {
-  let { networking, config } = modules;
+export default function (modules, endpoint, ...args) {
+  let { networking, config, telemetryManager } = modules;
+  const requestId = uuidGenerator.createUUID();
   let callback = null;
   let promiseComponent = null;
   let incomingParams = {};
 
-  if (endpoint.getOperation() === operationConstants.PNTimeOperation || endpoint.getOperation() === operationConstants.PNChannelGroupsOperation) {
+  if (
+    endpoint.getOperation() === operationConstants.PNTimeOperation ||
+    endpoint.getOperation() === operationConstants.PNChannelGroupsOperation
+  ) {
     callback = args[0];
   } else {
     incomingParams = args[0];
@@ -133,7 +152,9 @@ export default function(modules, endpoint, ...args) {
     if (callback) {
       return callback(createValidationError(validationResult));
     } else if (promiseComponent) {
-      promiseComponent.reject(new PubNubError('Validation failed, check status for details', createValidationError(validationResult)));
+      promiseComponent.reject(
+        new PubNubError('Validation failed, check status for details', createValidationError(validationResult))
+      );
       return promiseComponent.promise;
     }
     return;
@@ -142,21 +163,31 @@ export default function(modules, endpoint, ...args) {
   let outgoingParams = endpoint.prepareParams(modules, incomingParams);
   let url = decideURL(endpoint, modules, incomingParams);
   let callInstance;
-  let networkingParams = { url,
+  let networkingParams = {
+    url,
     operation: endpoint.getOperation(),
     timeout: endpoint.getRequestTimeout(modules),
-    headers: endpoint.getRequestHeaders ? endpoint.getRequestHeaders() : {}
+    headers: endpoint.getRequestHeaders ? endpoint.getRequestHeaders() : {},
+    ignoreBody: typeof endpoint.ignoreBody === 'function' ? endpoint.ignoreBody(modules) : false,
+    forceBuffered:
+      typeof endpoint.forceBuffered === 'function' ? endpoint.forceBuffered(modules, incomingParams) : null,
   };
 
   outgoingParams.uuid = config.UUID;
   outgoingParams.pnsdk = generatePNSDK(config);
+
+  // Add telemetry information (if there is any available).
+  const telemetryLatencies = telemetryManager.operationsLatencyForRequest();
+  if (Object.keys(telemetryLatencies).length) {
+    outgoingParams = { ...outgoingParams, ...telemetryLatencies };
+  }
 
   if (config.useInstanceId) {
     outgoingParams.instanceid = config.instanceId;
   }
 
   if (config.useRequestId) {
-    outgoingParams.requestid = uuidGenerator.createUUID();
+    outgoingParams.requestid = requestId;
   }
 
   if (endpoint.isAuthSupported()) {
@@ -174,6 +205,9 @@ export default function(modules, endpoint, ...args) {
 
   let onResponse = (status: StatusAnnouncement, payload: Object) => {
     if (status.error) {
+      if (endpoint.handleError) {
+        endpoint.handleError(modules, incomingParams, status);
+      }
       if (callback) {
         callback(status);
       } else if (promiseComponent) {
@@ -182,14 +216,46 @@ export default function(modules, endpoint, ...args) {
       return;
     }
 
-    let parsedPayload = endpoint.handleResponse(modules, payload, incomingParams);
+    // Stop endpoint latency tracking.
+    telemetryManager.stopLatencyMeasure(endpoint.getOperation(), requestId);
 
-    if (callback) {
-      callback(status, parsedPayload);
-    } else if (promiseComponent) {
-      promiseComponent.fulfill(parsedPayload);
+    let responseP = endpoint.handleResponse(modules, payload, incomingParams);
+
+    if (typeof responseP?.then !== 'function') {
+      responseP = Promise.resolve(responseP);
     }
+
+    responseP
+      .then((result) => {
+        if (callback) {
+          callback(status, result);
+        } else if (promiseComponent) {
+          promiseComponent.fulfill(result);
+        }
+      })
+      .catch((e) => {
+        if (callback) {
+          let errorData = e;
+
+          if (endpoint.getOperation() === operationConstants.PNSubscribeOperation) {
+            errorData = {
+              statusCode: 400,
+              error: true,
+              operation: endpoint.getOperation(),
+              errorData: e,
+              category: categoryConstants.PNUnknownCategory
+            };
+          }
+
+          callback(errorData, null);
+        } else if (promiseComponent) {
+          promiseComponent.reject(new PubNubError('PubNub call failed, check status for details', e));
+        }
+      });
   };
+
+  // Start endpoint latency tracking.
+  telemetryManager.startLatencyMeasure(endpoint.getOperation(), requestId);
 
   if (getHttpMethod(modules, endpoint, incomingParams) === 'POST') {
     let payload = endpoint.postPayload(modules, incomingParams);
@@ -199,6 +265,8 @@ export default function(modules, endpoint, ...args) {
     callInstance = networking.PATCH(outgoingParams, payload, networkingParams, onResponse);
   } else if (getHttpMethod(modules, endpoint, incomingParams) === 'DELETE') {
     callInstance = networking.DELETE(outgoingParams, networkingParams, onResponse);
+  } else if (getHttpMethod(modules, endpoint, incomingParams) === 'GETFILE') {
+    callInstance = networking.GETFILE(outgoingParams, networkingParams, onResponse);
   } else {
     callInstance = networking.GET(outgoingParams, networkingParams, onResponse);
   }
